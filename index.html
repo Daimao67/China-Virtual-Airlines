@@ -414,6 +414,8 @@
                                     <th class="p-3">航線 ROUTE</th>
                                     <th class="p-3">時間 (STD / STA)</th>
                                     <th class="p-3">登機門</th>
+                                    <th class="p-3">發布人 AUTHOR</th>
+                                    <th class="p-3">備註 REMARKS</th>
                                     <th class="p-3">狀態 STATUS</th>
                                 </tr>
                             </thead>
@@ -424,34 +426,7 @@
                     </div>
                 </div>
             </section>
-
-            <!-- VIEW 2: FLIGHT OPERATIONS (Matching IMG_0169 Status Buttons Row Layout) -->
-            <section id="view-flight-ops" class="space-y-6 hidden">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div>
-                        <h2 class="text-xl font-bold text-white flex items-center gap-2">
-                            <i class="fa-solid fa-plane text-blue-400"></i> 航班調度管理 (Flight Operations)
-                        </h2>
-                        <p class="text-xs text-slate-400 mt-0.5">發布後預設為「準時」。右側可直接一鍵更換 11 種狀態並即時同步 Discord 推播。</p>
-                    </div>
-                    <button onclick="openFlightModal()" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-lg shadow-lg shadow-blue-900/40 text-xs transition flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-plus"></i>
-                        <span>新增航班 Add Flight</span>
-                    </button>
-                </div>
-
-                <!-- Flight Search Bar -->
-                <div class="glass-card p-4 rounded-xl flex flex-wrap gap-3 items-center justify-between">
-                    <div class="relative flex-grow max-w-md">
-                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-500 text-xs"></i>
-                        <input type="text" id="flight-search-input" onkeyup="filterFlights()" placeholder="搜尋航班號、機場代碼或機型..." class="w-full bg-slate-900/90 border border-slate-700/80 rounded-lg pl-9 pr-4 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
-                    </div>
-                    <div class="text-xs text-slate-400 font-mono flex items-center gap-1.5">
-                        <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                        <span>點擊右側狀態按鈕即可一鍵切換狀態並發送 Discord 推播</span>
-                    </div>
-                </div>
-
+<!-- ... existing code -->
                 <!-- Flights Table (Exact Replica of IMG_0169) -->
                 <div class="glass-card rounded-xl overflow-hidden border border-slate-800">
                     <div class="overflow-x-auto">
@@ -463,6 +438,8 @@
                                     <th class="p-3.5 whitespace-nowrap">時間</th>
                                     <th class="p-3.5 whitespace-nowrap">登機門</th>
                                     <th class="p-3.5 whitespace-nowrap">機型</th>
+                                    <th class="p-3.5 whitespace-nowrap">發布人</th>
+                                    <th class="p-3.5 whitespace-nowrap">備註</th>
                                     <th class="p-3.5 whitespace-nowrap">當前狀態</th>
                                     <th class="p-3.5 text-right whitespace-nowrap">切換狀態 (發送 Discord 推播)</th>
                                 </tr>
@@ -474,241 +451,7 @@
                     </div>
                 </div>
             </section>
-
-            <!-- VIEW 3: NEWS CENTER (NEWS / ANNOUNCEMENTS) -->
-            <section id="view-news" class="space-y-6 hidden">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div>
-                        <h2 class="text-xl font-bold text-white flex items-center gap-2">
-                            <i class="fa-solid fa-bullhorn text-amber-400"></i> 公告管理 (News Center)
-                        </h2>
-                        <p class="text-xs text-slate-400 mt-0.5">發布官方公告、版本更新說明與營運新聞。</p>
-                    </div>
-                    <button onclick="openAnnouncementModal()" class="px-4 py-2.5 bg-amber-600 hover:bg-amber-500 text-white font-semibold rounded-lg shadow-lg shadow-amber-900/40 text-xs transition flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-plus"></i>
-                        <span>發布新公告 Create News</span>
-                    </button>
-                </div>
-
-                <div id="announcements-container" class="space-y-4">
-                    <!-- Dynamic Announcements -->
-                </div>
-            </section>
-
-            <!-- VIEW 4: ALERT BROADCAST (SYSTEM NOTIFICATION) -->
-            <section id="view-alert" class="space-y-6 hidden">
-                <div>
-                    <h2 class="text-xl font-bold text-white flex items-center gap-2">
-                        <i class="fa-solid fa-triangle-exclamation text-rose-400"></i> 系統推播 (Alert Broadcast)
-                    </h2>
-                    <p class="text-xs text-slate-400 mt-0.5">發送緊急廣播、例行維護與官方活動推播至 Discord 社群。</p>
-                </div>
-
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <!-- Form -->
-                    <div class="glass-card p-5 rounded-2xl space-y-4 border border-slate-800">
-                        <h3 class="text-sm font-bold text-slate-200 border-b border-slate-800 pb-2">推播內容編輯</h3>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-400 mb-1">通知類型 Type</label>
-                            <select id="notif-type" onchange="updateNotifPreview()" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-rose-500">
-                                <option value="maintenance">🛠️ 維護公告 (Maintenance)</option>
-                                <option value="event">🎉 活動公告 (Event Notification)</option>
-                                <option value="emergency">🚨 緊急通知 (Emergency Broadcast)</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-400 mb-1">主旨 Title</label>
-                            <input type="text" id="notif-title" onkeyup="updateNotifPreview()" placeholder="例如：【維護通知】伺服器例行維護作業" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-rose-500">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-400 mb-1">詳細說明 Content</label>
-                            <textarea id="notif-content" onkeyup="updateNotifPreview()" rows="5" placeholder="輸入通知詳細說明內容..." class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-rose-500"></textarea>
-                        </div>
-                        <button onclick="sendSystemNotification()" class="w-full py-3 bg-rose-600 hover:bg-rose-500 text-white font-semibold rounded-lg shadow-lg shadow-rose-950/50 text-xs transition flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-paper-plane"></i>
-                            <span>即時推送至 Discord (Send Broadcast)</span>
-                        </button>
-                    </div>
-
-                    <!-- Embed Live Preview -->
-                    <div class="glass-card p-5 rounded-2xl border border-slate-800 flex flex-col justify-between">
-                        <div>
-                            <h3 class="text-sm font-bold text-slate-200 border-b border-slate-800 pb-2 mb-4 flex items-center gap-2">
-                                <i class="fa-brands fa-discord text-indigo-400"></i>
-                                <span>Discord Embed 即時預覽</span>
-                            </h3>
-                            <div class="bg-slate-900/90 rounded-xl border-l-4 border-blue-600 p-4 font-sans shadow-md">
-                                <div class="flex items-center gap-2 mb-3">
-                                    <div class="w-6 h-6 rounded-full bg-slate-100 border border-slate-300 flex items-center justify-center p-0.5 shrink-0">
-                                        <svg viewBox="0 0 100 100" class="w-full h-full">
-                                            <g transform="translate(50,50)">
-                                                <path d="M 0,-12 C -18,-42 -42,-34 -32,-15 C -25,-2 -8,-2 0,-12" fill="#F472B6"/>
-                                                <path d="M 0,-12 C -18,-42 -42,-34 -32,-15 C -25,-2 -8,-2 0,-12" fill="#F472B6" transform="rotate(72)"/>
-                                                <path d="M 0,-12 C -18,-42 -42,-34 -32,-15 C -25,-2 -8,-2 0,-12" fill="#F472B6" transform="rotate(144)"/>
-                                                <path d="M 0,-12 C -18,-42 -42,-34 -32,-15 C -25,-2 -8,-2 0,-12" fill="#F472B6" transform="rotate(216)"/>
-                                                <path d="M 0,-12 C -18,-42 -42,-34 -32,-15 C -25,-2 -8,-2 0,-12" fill="#F472B6" transform="rotate(288)"/>
-                                                <path d="M 0,-8 C -10,-28 -28,-22 -20,-10 C -15,-2 -5,-2 0,-8" fill="#E11D48"/>
-                                                <path d="M 0,-8 C -10,-28 -28,-22 -20,-10 C -15,-2 -5,-2 0,-8" fill="#E11D48" transform="rotate(72)"/>
-                                                <path d="M 0,-8 C -10,-28 -28,-22 -20,-10 C -15,-2 -5,-2 0,-8" fill="#E11D48" transform="rotate(144)"/>
-                                                <path d="M 0,-8 C -10,-28 -28,-22 -20,-10 C -15,-2 -5,-2 0,-8" fill="#E11D48" transform="rotate(216)"/>
-                                                <path d="M 0,-8 C -10,-28 -28,-22 -20,-10 C -15,-2 -5,-2 0,-8" fill="#E11D48" transform="rotate(288)"/>
-                                                <circle cx="0" cy="0" r="3" fill="#FDE047"/>
-                                            </g>
-                                        </svg>
-                                    </div>
-                                    <span class="text-xs font-bold text-white">CVA Operations Bot</span>
-                                    <span class="text-[10px] bg-indigo-600 text-white px-1.5 py-0.2 rounded font-mono">BOT</span>
-                                </div>
-                                <h4 id="preview-title" class="text-sm font-bold text-blue-400 mb-2">🛠️ 維護公告 (Maintenance)</h4>
-                                <p id="preview-content" class="text-xs text-slate-300 whitespace-pre-wrap leading-relaxed mb-4">請在左側輸入通知內容...</p>
-                                <div class="text-[10px] text-slate-500 border-t border-slate-800 pt-2 flex items-center justify-between font-mono">
-                                    <span>China Virtual Airlines | Official Discord Bot</span>
-                                    <span>Today at Live</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- VIEW 5: SETTINGS (系統與 Webhook 設定) -->
-            <section id="view-settings" class="space-y-6 hidden">
-                <div>
-                    <h2 class="text-xl font-bold text-white flex items-center gap-2">
-                        <i class="fa-solid fa-gear text-emerald-400"></i> 系統與 Webhook 設定
-                    </h2>
-                    <p class="text-xs text-slate-400 mt-0.5">管理全網跨裝置資料庫同步 (Cloud API Sync)、Discord Webhook 與備份檔案。</p>
-                </div>
-
-                <!-- Cloud Sync Backend Settings -->
-                <div class="glass-card p-6 rounded-2xl space-y-5 border border-slate-800 max-w-3xl">
-                    <div class="border-b border-slate-800 pb-3 flex items-center justify-between">
-                        <h3 class="text-sm font-bold text-slate-200 flex items-center gap-2">
-                            <i class="fa-solid fa-cloud text-blue-400"></i>
-                            <span>全網跨裝置雲端資料庫同步 (Central Cloud DB Sync)</span>
-                        </h3>
-                        <span id="cloud-toggle-badge" class="text-[10px] px-2 py-0.5 rounded font-mono bg-slate-800 text-slate-400">OFF</span>
-                    </div>
-
-                    <p class="text-xs text-slate-400 leading-relaxed">
-                        填入您中央後端 API (Flask / JSONBin / Supabase) Endpoint，即可將全線航班動態與公告同步至全網所有控制台使用者與瀏覽器。
-                    </p>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-300 mb-1">中央 REST API / JSONBin Endpoint URL</label>
-                            <input type="text" id="setting-cloud-url" placeholder="https://api.jsonbin.io/v3/b/YOUR_BIN_ID 或 Flask API 網址" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-xs text-slate-200 font-mono focus:outline-none focus:border-blue-500">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-300 mb-1">API 金鑰 / Secret Key (選填)</label>
-                            <input type="password" id="setting-cloud-key" placeholder="$2a$10$..." class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-xs text-slate-200 font-mono focus:outline-none focus:border-blue-500">
-                        </div>
-                    </div>
-
-                    <div class="flex items-center gap-2 pt-1">
-                        <input type="checkbox" id="setting-cloud-enable" class="rounded bg-slate-900 border-slate-700 text-blue-600 focus:ring-0">
-                        <label for="setting-cloud-enable" class="text-xs text-slate-300 font-semibold cursor-pointer">啟用雲端全網跨裝置自動同步 (Auto Sync with Cloud DB)</label>
-                    </div>
-
-                    <div class="flex items-center gap-3 pt-2">
-                        <button onclick="pullCloudData()" class="px-3.5 py-2 bg-blue-950 hover:bg-blue-900 text-blue-300 border border-blue-800 rounded-lg text-xs transition flex items-center gap-1.5 font-medium">
-                            <i class="fa-solid fa-cloud-arrow-down"></i>
-                            <span>自雲端拉取最新資料 (Pull)</span>
-                        </button>
-                        <button onclick="pushCloudData()" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg text-xs transition flex items-center gap-1.5 font-medium">
-                            <i class="fa-solid fa-cloud-arrow-up"></i>
-                            <span>強制推送至雲端 (Push)</span>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Backup & Import/Export -->
-                <div class="glass-card p-6 rounded-2xl space-y-4 border border-slate-800 max-w-3xl">
-                    <h3 class="text-sm font-bold text-slate-200 border-b border-slate-800 pb-2 flex items-center gap-2">
-                        <i class="fa-solid fa-file-export text-amber-400"></i>
-                        <span>資料離線備份與跨裝置匯入/匯出 (Backup JSON)</span>
-                    </h3>
-                    <p class="text-xs text-slate-400">您可以將當前所有航班與公告完整匯出為 JSON 備份檔，或匯入至其他裝置的瀏覽器。</p>
-                    
-                    <div class="flex flex-wrap items-center gap-3 pt-2">
-                        <button onclick="exportDataJSON()" class="px-4 py-2.5 bg-amber-600/80 hover:bg-amber-600 text-white font-semibold rounded-lg text-xs transition flex items-center gap-2">
-                            <i class="fa-solid fa-download"></i>
-                            <span>匯出完整 JSON 備份 (Export)</span>
-                        </button>
-                        
-                        <label class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold rounded-lg text-xs transition cursor-pointer flex items-center gap-2 border border-slate-700">
-                            <i class="fa-solid fa-upload"></i>
-                            <span>匯入 JSON 檔案 (Import)</span>
-                            <input type="file" accept=".json" onchange="importDataJSON(event)" class="hidden">
-                        </label>
-                    </div>
-                </div>
-
-                <!-- Discord & Webhook Settings -->
-                <div class="glass-card p-6 rounded-2xl space-y-5 border border-slate-800 max-w-3xl">
-                    <h3 class="text-sm font-bold text-slate-200 border-b border-slate-800 pb-2 flex items-center gap-2">
-                        <i class="fa-brands fa-discord text-indigo-400"></i>
-                        <span>Discord Webhook & 社群連結</span>
-                    </h3>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-300 mb-1">Discord Webhook URL</label>
-                        <input type="text" id="setting-webhook" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-xs text-slate-200 font-mono focus:outline-none focus:border-emerald-500">
-                        <p class="text-[11px] text-slate-500 mt-1">用於將航班動態、公告與系統通知同步推播至指定 Discord 頻道。</p>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-300 mb-1">Discord 社群連結 (Community Link)</label>
-                        <input type="text" id="setting-discord" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-xs text-slate-200 font-mono focus:outline-none focus:border-emerald-500">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-300 mb-1">Discord Bot 邀請連結 (Bot OAuth2 Link)</label>
-                        <input type="text" id="setting-bot" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-xs text-slate-200 font-mono focus:outline-none focus:border-emerald-500">
-                    </div>
-
-                    <div class="pt-3 border-t border-slate-800 flex flex-wrap gap-3">
-                        <button onclick="saveSettings()" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-lg text-xs transition flex items-center gap-2 shadow-lg shadow-emerald-950/40">
-                            <i class="fa-solid fa-floppy-disk"></i>
-                            <span>儲存設定 Save Settings</span>
-                        </button>
-                        <button onclick="testWebhook()" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs transition flex items-center gap-2">
-                            <i class="fa-solid fa-vial"></i>
-                            <span>測試 Webhook 連線</span>
-                        </button>
-                    </div>
-                </div>
-            </section>
-
-            <!-- VIEW 6: PREVIEW & SYNC -->
-            <section id="view-preview" class="space-y-6 hidden">
-                <div>
-                    <h2 class="text-xl font-bold text-white flex items-center gap-2">
-                        <i class="fa-brands fa-discord text-indigo-400"></i> Discord & 官網同步視圖
-                    </h2>
-                    <p class="text-xs text-slate-400 mt-0.5">預覽官網與 Discord 頻道的同步更新狀態。</p>
-                </div>
-                <div class="glass-card p-6 rounded-2xl border border-slate-800 text-slate-400 text-xs font-mono">
-                    <p class="text-emerald-400 font-semibold mb-2">● Realtime Sync Active</p>
-                    <p>當前 Webhook 及 Flask API 指令正常運作中，所有控制台動作均即時廣播。</p>
-                </div>
-            </section>
-
-            <!-- VIEW 7: API LOGS -->
-            <section id="view-logs" class="space-y-6 hidden">
-                <div>
-                    <h2 class="text-xl font-bold text-white flex items-center gap-2">
-                        <i class="fa-solid fa-code text-emerald-400"></i> API / Webhook 紀錄
-                    </h2>
-                    <p class="text-xs text-slate-400 mt-0.5">查看近期 Webhook 推送日誌。</p>
-                </div>
-                <div class="glass-card p-5 rounded-2xl border border-slate-800 font-mono text-xs">
-                    <div id="logs-container" class="space-y-2 text-slate-400">
-                        <p class="text-slate-500">[SYSTEM] CVA Operations Console Log Initialized.</p>
-                    </div>
-                </div>
-            </section>
-
-        </main>
-    </div>
-
+<!-- ... existing code -->
     <!-- FLIGHT MODAL -->
     <div id="flight-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
         <div class="glass-card w-full max-w-lg rounded-2xl border border-slate-800 overflow-hidden shadow-2xl">
@@ -757,6 +500,16 @@
                         <input type="text" id="flight-gate" placeholder="A9" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-blue-500">
                     </div>
                 </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-400 mb-1">發布人 (Publisher)</label>
+                        <input type="text" id="flight-author" placeholder="例如：CVA-DISPATCH / 簽派員" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-400 mb-1">航班備註 (Remarks)</label>
+                        <input type="text" id="flight-remarks" placeholder="例如：第一航廈 / VIP 班機" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-blue-500">
+                    </div>
+                </div>
                 <div class="pt-3 border-t border-slate-800 flex justify-end gap-2">
                     <button type="button" onclick="closeFlightModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition">取消</button>
                     <button type="submit" class="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-lg shadow-md transition">儲存航班</button>
@@ -779,13 +532,23 @@
             </div>
             <form onsubmit="handleAnnouncementSubmit(event)" class="p-5 space-y-4 text-xs">
                 <input type="hidden" id="ann-id">
-                <div>
-                    <label class="block font-semibold text-slate-400 mb-1">公告標題 Title *</label>
-                    <input type="text" id="ann-title" required placeholder="輸入公告標題..." class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-amber-500">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-400 mb-1">公告標題 Title *</label>
+                        <input type="text" id="ann-title" required placeholder="輸入公告標題..." class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-amber-500">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-400 mb-1">發布人 / 單位 Author</label>
+                        <input type="text" id="ann-author" placeholder="例如：營運部 / CVA-Admin" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-amber-500">
+                    </div>
                 </div>
                 <div>
                     <label class="block font-semibold text-slate-400 mb-1">公告內容 Content *</label>
-                    <textarea id="ann-content" required rows="5" placeholder="輸入公告詳細內容..." class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-amber-500"></textarea>
+                    <textarea id="ann-content" required rows="4" placeholder="輸入公告詳細內容..." class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-amber-500"></textarea>
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-400 mb-1">備註說明 Remarks (選填)</label>
+                    <input type="text" id="ann-remarks" placeholder="內部備註或注意事項..." class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-amber-500">
                 </div>
                 <div class="flex items-center gap-2">
                     <input type="checkbox" id="ann-pinned" class="rounded bg-slate-900 border-slate-700 text-amber-500 focus:ring-0">
@@ -803,310 +566,6 @@
     <div id="toast-container" class="fixed bottom-5 right-5 z-50 space-y-2 pointer-events-none"></div>
 
     <script>
-        const DEFAULT_SETTINGS = {
-            webhookUrl: "https://discord.com/api/webhooks/1530489579155755059/xCf_pM_cu8bWDX3twrpM3QHRDkmXwD1mVTRgJ9C71vi9BqJ3Lp-L1ywj8tQ0ltHCmVR_",
-            discordLink: "https://discord.gg/8Gn2DzCPq3",
-            botLink: "https://discord.com/oauth2/authorize?client_id=1530464409703546960&permissions=8&integration_type=0&scope=bot+applications.commands",
-            cloudUrl: "",
-            cloudKey: "",
-            cloudEnable: false
-        };
-
-        const FLIGHT_STATUSES = {
-            "On Time": { label: "準時", icon: "🟢", bg: "bg-emerald-900/60", text: "text-emerald-300", border: "border-emerald-700/50" },
-            "Delayed": { label: "延誤", icon: "🟡", bg: "bg-amber-900/60", text: "text-amber-300", border: "border-amber-700/50" },
-            "CheckinOpen": { label: "開放報到", icon: "🔵", bg: "bg-blue-900/60", text: "text-blue-300", border: "border-blue-700/50" },
-            "CheckinClosed": { label: "報到截止", icon: "🟣", bg: "bg-purple-900/60", text: "text-purple-300", border: "border-purple-700/50" },
-            "Boarding": { label: "登機中", icon: "🟠", bg: "bg-orange-900/60", text: "text-orange-300", border: "border-orange-700/50" },
-            "GateClosed": { label: "登機完成", icon: "🚪", bg: "bg-slate-800", text: "text-slate-300", border: "border-slate-700" },
-            "Departed": { label: "已起飛", icon: "🛫", bg: "bg-indigo-900/60", text: "text-indigo-300", border: "border-indigo-700/50" },
-            "Arrived": { label: "已抵達", icon: "🛬", bg: "bg-teal-900/60", text: "text-teal-300", border: "border-teal-700/50" },
-            "Diverted": { label: "改降", icon: "🔄", bg: "bg-pink-900/60", text: "text-pink-300", border: "border-pink-700/50" },
-            "Returned": { label: "返回機坪", icon: "↩️", bg: "bg-stone-800", text: "text-stone-300", border: "border-stone-700" },
-            "Cancelled": { label: "已取消", icon: "🔴", bg: "bg-rose-900/60", text: "text-rose-300", border: "border-rose-700/50" }
-        };
-
-        const ALL_STATUS_KEYS = Object.keys(FLIGHT_STATUSES);
-
-        let state = {
-            flights: [],
-            announcements: [],
-            settings: { ...DEFAULT_SETTINGS }
-        };
-
-        window.addEventListener('DOMContentLoaded', () => {
-            loadAllState();
-            startClocks();
-            renderAllViews();
-            updateNotifPreview();
-            updateCloudBadge();
-
-            // Auto-pull from cloud DB every 20 seconds if enabled
-            setInterval(() => {
-                if (state.settings.cloudEnable && state.settings.cloudUrl) {
-                    pullCloudData(true);
-                }
-            }, 20000);
-        });
-
-        function startClocks() {
-            setInterval(() => {
-                const now = new Date();
-                const utcStr = now.toISOString().substr(11, 8) + " UTC";
-                const localStr = now.toLocaleTimeString('zh-TW', { hour12: false }) + " LOCAL";
-                document.getElementById('header-utc-clock').innerText = utcStr;
-                document.getElementById('header-local-clock').innerText = localStr;
-            }, 1000);
-        }
-
-        function loadAllState() {
-            try {
-                const savedFlights = localStorage.getItem('cva_flights');
-                const savedAnn = localStorage.getItem('cva_announcements');
-                const savedSettings = localStorage.getItem('cva_settings');
-
-                if (savedFlights) state.flights = JSON.parse(savedFlights);
-                if (savedAnn) state.announcements = JSON.parse(savedAnn);
-                if (savedSettings) state.settings = { ...DEFAULT_SETTINGS, ...JSON.parse(savedSettings) };
-            } catch (e) {
-                console.error("Failed to load state", e);
-            }
-
-            document.getElementById('setting-webhook').value = state.settings.webhookUrl || "";
-            document.getElementById('setting-discord').value = state.settings.discordLink || "";
-            document.getElementById('setting-bot').value = state.settings.botLink || "";
-            document.getElementById('setting-cloud-url').value = state.settings.cloudUrl || "";
-            document.getElementById('setting-cloud-key').value = state.settings.cloudKey || "";
-            document.getElementById('setting-cloud-enable').checked = !!state.settings.cloudEnable;
-
-            if (document.getElementById('link-discord')) document.getElementById('link-discord').href = state.settings.discordLink || "#";
-            if (document.getElementById('link-bot')) document.getElementById('link-bot').href = state.settings.botLink || "#";
-        }
-
-        function saveAllState(skipPush = false) {
-            localStorage.setItem('cva_flights', JSON.stringify(state.flights));
-            localStorage.setItem('cva_announcements', JSON.stringify(state.announcements));
-            localStorage.setItem('cva_settings', JSON.stringify(state.settings));
-
-            if (!skipPush && state.settings.cloudEnable && state.settings.cloudUrl) {
-                pushCloudData(true);
-            }
-        }
-
-        function updateCloudBadge() {
-            const badge = document.getElementById('cloud-status-badge');
-            const txt = document.getElementById('cloud-status-text');
-            const toggleBadge = document.getElementById('cloud-toggle-badge');
-
-            if (state.settings.cloudEnable && state.settings.cloudUrl) {
-                badge.className = "flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-950/40 text-emerald-400 border border-emerald-800/50 font-mono text-[11px]";
-                txt.innerText = "☁️ 雲端同步 ON";
-                if (toggleBadge) {
-                    toggleBadge.innerText = "ON";
-                    toggleBadge.className = "text-[10px] px-2 py-0.5 rounded font-mono bg-emerald-950 text-emerald-400 border border-emerald-800";
-                }
-            } else {
-                badge.className = "flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-950/40 text-amber-400 border border-amber-800/50 font-mono text-[11px]";
-                txt.innerText = "📱 本地儲存 MODE";
-                if (toggleBadge) {
-                    toggleBadge.innerText = "OFF";
-                    toggleBadge.className = "text-[10px] px-2 py-0.5 rounded font-mono bg-slate-800 text-slate-400";
-                }
-            }
-        }
-
-        function pullCloudData(silent = false) {
-            const url = state.settings.cloudUrl;
-            if (!url) {
-                if (!silent) showToast("未填寫雲端 API Endpoint 網址", "warning");
-                return;
-            }
-
-            const headers = { 'Accept': 'application/json' };
-            if (state.settings.cloudKey) {
-                headers['X-Master-Key'] = state.settings.cloudKey;
-                headers['Authorization'] = 'Bearer ' + state.settings.cloudKey;
-            }
-
-            fetch(url, { headers })
-            .then(res => res.json())
-            .then(data => {
-                const payload = data.record || data.data || data;
-                if (payload && (payload.flights || payload.announcements)) {
-                    if (Array.isArray(payload.flights)) state.flights = payload.flights;
-                    if (Array.isArray(payload.announcements)) state.announcements = payload.announcements;
-                    
-                    saveAllState(true);
-                    renderAllViews();
-                    if (!silent) showToast("已成功自雲端拉取最新全網資料！", "success");
-                    addLog("CLOUD PULL: Data synchronized from " + url);
-                }
-            })
-            .catch(err => {
-                if (!silent) showToast("拉取雲端資料失敗：" + err.message, "warning");
-                addLog("CLOUD PULL ERROR: " + err.message);
-            });
-        }
-
-        function pushCloudData(silent = false) {
-            const url = state.settings.cloudUrl;
-            if (!url) {
-                if (!silent) showToast("未填寫雲端 API Endpoint 網址", "warning");
-                return;
-            }
-
-            const headers = { 'Content-Type': 'application/json' };
-            if (state.settings.cloudKey) {
-                headers['X-Master-Key'] = state.settings.cloudKey;
-                headers['Authorization'] = 'Bearer ' + state.settings.cloudKey;
-            }
-
-            const payload = {
-                flights: state.flights,
-                announcements: state.announcements,
-                updatedAt: new Date().toISOString()
-            };
-
-            fetch(url, {
-                method: 'PUT',
-                headers,
-                body: JSON.stringify(payload)
-            })
-            .then(res => {
-                if (res.ok) {
-                    if (!silent) showToast("成功推送資料至雲端資料庫！", "success");
-                    addLog("CLOUD PUSH: Success to " + url);
-                } else {
-                    if (!silent) showToast("推送失敗，狀態碼：" + res.status, "warning");
-                }
-            })
-            .catch(err => {
-                if (!silent) showToast("推送雲端資料失敗：" + err.message, "warning");
-                addLog("CLOUD PUSH ERROR: " + err.message);
-            });
-        }
-
-        function exportDataJSON() {
-            const backup = {
-                version: "1.2.0",
-                exportDate: new Date().toISOString(),
-                flights: state.flights,
-                announcements: state.announcements,
-                settings: state.settings
-            };
-
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backup, null, 2));
-            const downloadAnchor = document.createElement('a');
-            downloadAnchor.setAttribute("href", dataStr);
-            downloadAnchor.setAttribute("download", `CVA_Backup_${new Date().toISOString().slice(0, 10)}.json`);
-            document.body.appendChild(downloadAnchor);
-            downloadAnchor.click();
-            downloadAnchor.remove();
-            showToast("已將 CVA 全網備份檔案匯出至本機！", "success");
-        }
-
-        function importDataJSON(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const data = JSON.parse(e.target.result);
-                    if (data.flights && Array.isArray(data.flights)) state.flights = data.flights;
-                    if (data.announcements && Array.isArray(data.announcements)) state.announcements = data.announcements;
-                    if (data.settings) state.settings = { ...DEFAULT_SETTINGS, ...data.settings };
-
-                    saveAllState();
-                    loadAllState();
-                    renderAllViews();
-                    updateCloudBadge();
-                    showToast("備份資料已順利匯入並更新！", "success");
-                } catch (err) {
-                    showToast("無效的 JSON 備份檔案，格式不符", "warning");
-                }
-            };
-            reader.readAsText(file);
-        }
-
-        function saveSettings() {
-            state.settings.webhookUrl = document.getElementById('setting-webhook').value.trim();
-            state.settings.discordLink = document.getElementById('setting-discord').value.trim();
-            state.settings.botLink = document.getElementById('setting-bot').value.trim();
-            state.settings.cloudUrl = document.getElementById('setting-cloud-url').value.trim();
-            state.settings.cloudKey = document.getElementById('setting-cloud-key').value.trim();
-            state.settings.cloudEnable = document.getElementById('setting-cloud-enable').checked;
-
-            saveAllState();
-            updateCloudBadge();
-
-            if (document.getElementById('link-discord')) document.getElementById('link-discord').href = state.settings.discordLink || "#";
-            if (document.getElementById('link-bot')) document.getElementById('link-bot').href = state.settings.botLink || "#";
-
-            showToast("系統與雲端同步設定已儲存！", "success");
-        }
-
-        function loadAllState() {
-            try {
-                const savedFlights = localStorage.getItem('cva_flights');
-                const savedAnn = localStorage.getItem('cva_announcements');
-                const savedSettings = localStorage.getItem('cva_settings');
-
-                if (savedFlights) state.flights = JSON.parse(savedFlights);
-                if (savedAnn) state.announcements = JSON.parse(savedAnn);
-                if (savedSettings) state.settings = { ...DEFAULT_SETTINGS, ...JSON.parse(savedSettings) };
-            } catch (e) {
-                console.error("Failed to load state", e);
-            }
-
-            document.getElementById('setting-webhook').value = state.settings.webhookUrl || "";
-            document.getElementById('setting-discord').value = state.settings.discordLink || "";
-            document.getElementById('setting-bot').value = state.settings.botLink || "";
-
-            if (document.getElementById('link-discord')) document.getElementById('link-discord').href = state.settings.discordLink || "#";
-            if (document.getElementById('link-bot')) document.getElementById('link-bot').href = state.settings.botLink || "#";
-        }
-
-        function saveAllState() {
-            localStorage.setItem('cva_flights', JSON.stringify(state.flights));
-            localStorage.setItem('cva_announcements', JSON.stringify(state.announcements));
-            localStorage.setItem('cva_settings', JSON.stringify(state.settings));
-        }
-
-        function switchView(viewName) {
-            const views = ['dashboard', 'flight-ops', 'news', 'alert', 'settings', 'preview', 'logs'];
-            views.forEach(v => {
-                const sec = document.getElementById(`view-${v}`);
-                const btn = document.getElementById(`nav-${v}`);
-                if (sec) sec.classList.add('hidden');
-                if (btn) btn.classList.remove('active');
-            });
-
-            const targetSec = document.getElementById(`view-${viewName}`);
-            const targetBtn = document.getElementById(`nav-${viewName}`);
-
-            if (targetSec) targetSec.classList.remove('hidden');
-            if (targetBtn) targetBtn.classList.add('active');
-        }
-
-        function renderAllViews() {
-            renderDashboardTable();
-            renderFlightOpsTable();
-            renderAnnouncements();
-            updateBadges();
-        }
-
-        function updateBadges() {
-            document.getElementById('badge-flight-count').innerText = state.flights.length;
-            document.getElementById('badge-news-count').innerText = state.announcements.length;
-
-            document.getElementById('stat-total-flights').innerText = state.flights.length;
-            document.getElementById('stat-total-news').innerText = state.announcements.length;
-
-            const pinnedCount = state.announcements.filter(a => a.pinned).length;
-            document.getElementById('stat-pinned-news').innerText = `置頂公告 ${pinnedCount} 則`;
-        }
-
         function renderDashboardTable() {
             const tbody = document.getElementById('dash-flight-table');
             if (!tbody) return;
@@ -1114,7 +573,7 @@
             if (state.flights.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="6" class="p-8 text-center text-slate-500">
+                        <td colspan="8" class="p-8 text-center text-slate-500">
                             <i class="fa-solid fa-plane-slash text-2xl mb-2 block text-slate-600"></i>
                             目前尚無任何航班資料（請至「航班管理」新增）
                         </td>
@@ -1132,6 +591,8 @@
                         <td class="p-3 text-slate-200">${f.origin} ➔ ${f.dest}</td>
                         <td class="p-3 text-slate-400">${f.std || '--'} / ${f.sta || '--'}</td>
                         <td class="p-3 text-amber-300 font-bold">${f.gate || '--'}</td>
+                        <td class="p-3 text-slate-400">${f.author || 'CVA-OCC'}</td>
+                        <td class="p-3 text-slate-400 max-w-[150px] truncate" title="${f.remarks || '-'}">${f.remarks || '-'}</td>
                         <td class="p-3">
                             <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[11px] font-semibold border ${st.bg} ${st.text} ${st.border}">
                                 <span>${st.icon}</span>
@@ -1152,7 +613,7 @@
             if (list.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="7" class="p-10 text-center text-slate-500 text-xs">
+                        <td colspan="9" class="p-10 text-center text-slate-500 text-xs">
                             <i class="fa-solid fa-plane-circle-plus text-3xl mb-3 text-blue-500/50 block"></i>
                             目前尚無任何航班資料，請點擊右上角「新增航班」建立第一筆數據
                         </td>
@@ -1186,6 +647,8 @@
                         <td class="p-3.5 text-slate-300 whitespace-nowrap">${f.std || '--'} / ${f.sta || '--'}</td>
                         <td class="p-3.5 text-amber-300 font-bold whitespace-nowrap">${f.gate || '--'}</td>
                         <td class="p-3.5 text-slate-300 whitespace-nowrap">${f.aircraft}</td>
+                        <td class="p-3.5 text-slate-400 whitespace-nowrap">${f.author || 'CVA-OCC'}</td>
+                        <td class="p-3.5 text-slate-400 max-w-[150px] truncate" title="${f.remarks || '-'}">${f.remarks || '-'}</td>
                         <td class="p-3.5 whitespace-nowrap">
                             <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold border ${st.bg} ${st.text} ${st.border}">
                                 <span>${st.icon}</span>
@@ -1211,20 +674,6 @@
             }).join('');
         }
 
-        function quickUpdateStatus(flightId, newStatusKey) {
-            const flight = state.flights.find(f => f.id === flightId);
-            if (!flight) return;
-
-            flight.status = newStatusKey;
-            saveAllState();
-            renderAllViews();
-            
-            syncFlightToDiscord(flight);
-
-            const st = FLIGHT_STATUSES[newStatusKey] || { label: newStatusKey, icon: '' };
-            showToast(`✈️ 航班 ${flight.flightNo} 狀態已切換為【${st.icon} ${st.label}】，已同步至 Discord！`, "success");
-        }
-
         function openFlightModal(flight = null) {
             document.getElementById('flight-id').value = flight ? flight.id : '';
             document.getElementById('flight-no').value = flight ? flight.flightNo : '';
@@ -1234,13 +683,11 @@
             document.getElementById('flight-std').value = flight ? flight.std : '';
             document.getElementById('flight-sta').value = flight ? flight.sta : '';
             document.getElementById('flight-gate').value = flight ? flight.gate : '';
+            document.getElementById('flight-author').value = flight ? (flight.author || '') : '';
+            document.getElementById('flight-remarks').value = flight ? (flight.remarks || '') : '';
 
             document.getElementById('flight-modal-title').innerText = flight ? '編輯航班資訊' : '新增航班 Add Flight';
             document.getElementById('flight-modal').classList.remove('hidden');
-        }
-
-        function closeFlightModal() {
-            document.getElementById('flight-modal').classList.add('hidden');
         }
 
         function handleFlightSubmit(e) {
@@ -1259,6 +706,8 @@
                 std: document.getElementById('flight-std').value,
                 sta: document.getElementById('flight-sta').value,
                 gate: document.getElementById('flight-gate').value,
+                author: document.getElementById('flight-author').value || 'CVA-OCC',
+                remarks: document.getElementById('flight-remarks').value || '',
                 status
             };
 
@@ -1274,29 +723,6 @@
             closeFlightModal();
             syncFlightToDiscord(flightData);
             showToast(`已成功儲存航班 ${flightData.flightNo}`, "success");
-        }
-
-        function editFlight(id) {
-            const flight = state.flights.find(f => f.id === id);
-            if (flight) openFlightModal(flight);
-        }
-
-        function deleteFlight(id) {
-            state.flights = state.flights.filter(f => f.id !== id);
-            saveAllState();
-            renderAllViews();
-            showToast("已成功刪除航班", "info");
-        }
-
-        function filterFlights() {
-            const query = document.getElementById('flight-search-input').value.toLowerCase();
-            const filtered = state.flights.filter(f => 
-                f.flightNo.toLowerCase().includes(query) ||
-                f.origin.toLowerCase().includes(query) ||
-                f.dest.toLowerCase().includes(query) ||
-                f.aircraft.toLowerCase().includes(query)
-            );
-            renderFlightOpsTable(filtered);
         }
 
         function renderAnnouncements() {
@@ -1320,9 +746,13 @@
                             ${ann.pinned ? '<span class="px-2 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-800 text-[10px] font-bold"><i class="fa-solid fa-thumbtack mr-1"></i>置頂</span>' : ''}
                             <h3 class="font-bold text-sm text-white">${ann.title}</h3>
                         </div>
-                        <span class="text-[10px] text-slate-500 font-mono">${ann.date}</span>
+                        <div class="flex items-center gap-3 text-[10px] text-slate-500 font-mono">
+                            <span class="text-cyan-400/80"><i class="fa-solid fa-user-pen mr-1"></i>${ann.author || 'CVA 營運部'}</span>
+                            <span>${ann.date}</span>
+                        </div>
                     </div>
                     <p class="text-xs text-slate-300 whitespace-pre-wrap leading-relaxed">${ann.content}</p>
+                    ${ann.remarks ? `<p class="text-[11px] text-slate-400 bg-slate-900/60 p-2 rounded-lg border border-slate-800/80 font-mono"><i class="fa-solid fa-circle-info text-amber-400 mr-1.5"></i>備註：${ann.remarks}</p>` : ''}
                     <div class="pt-2 flex items-center justify-between border-t border-slate-800 text-xs">
                         <button onclick="syncAnnouncementToDiscord('${ann.id}')" class="px-3 py-1 bg-indigo-950 hover:bg-indigo-900 text-indigo-300 border border-indigo-800 rounded-lg transition flex items-center gap-1 text-[11px]">
                             <i class="fa-brands fa-discord"></i>
@@ -1340,15 +770,13 @@
         function openAnnouncementModal(ann = null) {
             document.getElementById('ann-id').value = ann ? ann.id : '';
             document.getElementById('ann-title').value = ann ? ann.title : '';
+            document.getElementById('ann-author').value = ann ? (ann.author || '') : '';
             document.getElementById('ann-content').value = ann ? ann.content : '';
+            document.getElementById('ann-remarks').value = ann ? (ann.remarks || '') : '';
             document.getElementById('ann-pinned').checked = ann ? ann.pinned : false;
 
             document.getElementById('ann-modal-title').innerText = ann ? '編輯公告' : '發布公告 Create News';
             document.getElementById('announcement-modal').classList.remove('hidden');
-        }
-
-        function closeAnnouncementModal() {
-            document.getElementById('announcement-modal').classList.add('hidden');
         }
 
         function handleAnnouncementSubmit(e) {
@@ -1357,7 +785,9 @@
             const annData = {
                 id,
                 title: document.getElementById('ann-title').value,
+                author: document.getElementById('ann-author').value || 'CVA 營運部',
                 content: document.getElementById('ann-content').value,
+                remarks: document.getElementById('ann-remarks').value || '',
                 pinned: document.getElementById('ann-pinned').checked,
                 date: new Date().toLocaleString('zh-TW', { hour12: false })
             };
@@ -1376,61 +806,26 @@
             showToast("公告已儲存並同步發布", "success");
         }
 
-        function editAnnouncement(id) {
-            const ann = state.announcements.find(a => a.id === id);
-            if (ann) openAnnouncementModal(ann);
-        }
+        function syncFlightToDiscord(flight) {
+            const st = FLIGHT_STATUSES[flight.status] || FLIGHT_STATUSES['On Time'];
+            const fields = [
+                { name: "航線 (Route)", value: `${flight.origin} ➔ ${flight.dest}`, inline: true },
+                { name: "狀態 (Status)", value: `${st.icon} ${st.label}`, inline: true },
+                { name: "登機門 (Gate)", value: flight.gate || "待定", inline: true },
+                { name: "預計時間 (STD/STA)", value: `${flight.std || '--'} / ${flight.sta || '--'}`, inline: true },
+                { name: "執飛機型 (Aircraft)", value: flight.aircraft, inline: true },
+                { name: "發布人 (Publisher)", value: flight.author || "CVA-OCC", inline: true }
+            ];
 
-        function deleteAnnouncement(id) {
-            state.announcements = state.announcements.filter(a => a.id !== id);
-            saveAllState();
-            renderAllViews();
-            showToast("公告已刪除", "info");
-        }
-
-        function updateNotifPreview() {
-            const title = document.getElementById('notif-title').value || "🛠️ 維護公告 (Maintenance)";
-            const content = document.getElementById('notif-content').value || "請在左側輸入通知內容...";
-
-            document.getElementById('preview-title').innerText = title;
-            document.getElementById('preview-content').innerText = content;
-        }
-
-        function sendSystemNotification() {
-            const title = document.getElementById('notif-title').value;
-            const content = document.getElementById('notif-content').value;
-
-            if (!title || !content) {
-                showToast("請輸入通知主旨與內容", "warning");
-                return;
+            if (flight.remarks) {
+                fields.push({ name: "備註說明 (Remarks)", value: flight.remarks, inline: false });
             }
 
             const payload = {
                 embeds: [{
-                    title: `📢 中華虛擬航空 CVA | ${title}`,
-                    description: content,
-                    color: 2000522,
-                    footer: { text: "China Virtual Airlines | Official Discord Bot" },
-                    timestamp: new Date().toISOString()
-                }]
-            };
-
-            sendDiscordWebhook(payload, "系統通知已發送至 Discord");
-        }
-
-        function syncFlightToDiscord(flight) {
-            const st = FLIGHT_STATUSES[flight.status] || FLIGHT_STATUSES['On Time'];
-            const payload = {
-                embeds: [{
                     title: `✈️ 航班動態更新：${flight.flightNo}`,
                     color: 2000522,
-                    fields: [
-                        { name: "航線 (Route)", value: `${flight.origin} ➔ ${flight.dest}`, inline: true },
-                        { name: "狀態 (Status)", value: `${st.icon} ${st.label}`, inline: true },
-                        { name: "登機門 (Gate)", value: flight.gate || "待定", inline: true },
-                        { name: "預計時間 (STD/STA)", value: `${flight.std || '--'} / ${flight.sta || '--'}`, inline: true },
-                        { name: "執飛機型 (Aircraft)", value: flight.aircraft, inline: true }
-                    ],
+                    fields: fields,
                     footer: { text: "China Virtual Airlines | Official Discord Bot" },
                     timestamp: new Date().toISOString()
                 }]
@@ -1442,126 +837,25 @@
             const ann = typeof id === 'object' ? id : state.announcements.find(a => a.id === id);
             if (!ann) return;
 
+            const fields = [
+                { name: "發布單位/發布人", value: ann.author || "CVA 營運部", inline: true }
+            ];
+
+            if (ann.remarks) {
+                fields.push({ name: "備註說明", value: ann.remarks, inline: false });
+            }
+
             const payload = {
                 embeds: [{
                     title: `📢 官方公告：${ann.title}`,
                     description: ann.content,
+                    fields: fields,
                     color: 2000522,
                     footer: { text: "China Virtual Airlines | Official Discord Bot" },
                     timestamp: new Date().toISOString()
                 }]
             };
             sendDiscordWebhook(payload, "公告已同步推播至 Discord");
-        }
-
-        function addLog(msg) {
-            const container = document.getElementById('logs-container');
-            if (!container) return;
-            const p = document.createElement('p');
-            p.innerText = `[${new Date().toLocaleTimeString('zh-TW')}] ${msg}`;
-            container.prepend(p);
-        }
-
-        function sendDiscordWebhook(payload, successMsg) {
-            const url = state.settings.webhookUrl;
-            addLog(`SEND Webhook payload: ${JSON.stringify(payload.embeds[0].title)}`);
-
-            if (!url) {
-                showToast("未設定 Webhook URL，無法發送 Discord 訊息", "warning");
-                return;
-            }
-
-            fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            })
-            .then(res => {
-                if (res.ok || res.status === 204) {
-                    showToast(successMsg, "success");
-                    addLog(`SUCCESS: Webhook delivered (${res.status})`);
-                } else {
-                    showToast("Discord Webhook 回傳異常: " + res.status, "warning");
-                    addLog(`ERROR: Webhook response status ${res.status}`);
-                }
-            })
-            .catch(err => {
-                console.error("Webhook Send Error:", err);
-                showToast("Webhook 發送失敗，請檢查網路連線或網址", "warning");
-                addLog(`ERROR: Fetch failed - ${err.message}`);
-            });
-        }
-
-        function saveSettings() {
-            state.settings.webhookUrl = document.getElementById('setting-webhook').value.trim();
-            state.settings.discordLink = document.getElementById('setting-discord').value.trim();
-            state.settings.botLink = document.getElementById('setting-bot').value.trim();
-
-            saveAllState();
-
-            if (document.getElementById('link-discord')) document.getElementById('link-discord').href = state.settings.discordLink || "#";
-            if (document.getElementById('link-bot')) document.getElementById('link-bot').href = state.settings.botLink || "#";
-
-            showToast("系統設定已儲存！", "success");
-        }
-
-        function testWebhook() {
-            const url = document.getElementById('setting-webhook').value.trim();
-            if (!url) {
-                showToast("請先輸入 Webhook URL", "warning");
-                return;
-            }
-
-            fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    embeds: [{
-                        title: "🟢 CVA Webhook 連線測試成功",
-                        description: "中華虛擬航空 營運控制中心已順利連線至此 Discord 頻道！",
-                        color: 2000522,
-                        footer: { text: "China Virtual Airlines | Official Discord Bot" },
-                        timestamp: new Date().toISOString()
-                    }]
-                })
-            })
-            .then(res => {
-                if (res.ok || res.status === 204) {
-                    showToast("Webhook 連線測試成功！請至 Discord 頻道查看", "success");
-                } else {
-                    showToast("連線失敗，狀態碼: " + res.status, "warning");
-                }
-            })
-            .catch(err => {
-                showToast("連線測試失敗，請檢查 Webhook 網址是否正確", "warning");
-            });
-        }
-
-        function showToast(msg, type = "info") {
-            const container = document.getElementById('toast-container');
-            if (!container) return;
-
-            const toast = document.createElement('div');
-            const bgClass = type === 'success' ? 'bg-emerald-900 border-emerald-700 text-emerald-200' :
-                            type === 'warning' ? 'bg-amber-900 border-amber-700 text-amber-200' :
-                            'bg-blue-900 border-blue-700 text-blue-200';
-
-            toast.className = `p-3.5 rounded-xl border ${bgClass} text-xs shadow-xl flex items-center gap-2 transform transition-all duration-300 translate-y-4 opacity-0 font-medium`;
-            toast.innerHTML = `
-                <i class="fa-solid ${type === 'success' ? 'fa-circle-check' : 'fa-circle-info'}"></i>
-                <span>${msg}</span>
-            `;
-
-            container.appendChild(toast);
-
-            requestAnimationFrame(() => {
-                toast.classList.remove('translate-y-4', 'opacity-0');
-            });
-
-            setTimeout(() => {
-                toast.classList.add('opacity-0', 'translate-y-4');
-                setTimeout(() => toast.remove(), 300);
-            }, 3500);
         }
     </script>
 </body>

@@ -675,6 +675,53 @@
         let isSyncing = false;
         let lastCloudTimestamp = 0;
 
+        // Logging & System Log Functions
+        function addLog(msg) {
+            const container = document.getElementById('logs-container');
+            if (!container) return;
+            const time = new Date().toLocaleTimeString();
+            const div = document.createElement('div');
+            div.className = 'text-slate-300 font-mono text-xs py-0.5 border-b border-slate-900/50';
+            div.innerHTML = `<span class="text-slate-500">[${time}]</span> ${msg}`;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function clearLogs() {
+            const container = document.getElementById('logs-container');
+            if (container) {
+                container.innerHTML = '<div class="text-slate-500">[SYSTEM] CVA Operations Log Cleared...</div>';
+            }
+        }
+
+        // Discord Webhook Dispatcher
+        async function sendDiscordEmbed(title, description, color = 0x00F0FF, fields = []) {
+            if (!webhookUrl || !webhookUrl.startsWith('http')) return;
+            try {
+                const body = {
+                    username: "CVA Operations Center",
+                    avatar_url: "https://placehold.co/100x100/1E3A8A/00F0FF?text=CVA",
+                    embeds: [{
+                        title: title,
+                        description: description,
+                        color: color,
+                        fields: fields,
+                        footer: { text: "China Virtual Airlines • CVA Operations Console" },
+                        timestamp: new Date().toISOString()
+                    }]
+                };
+                await fetch(webhookUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                addLog(`[WEBHOOK] Successfully dispatched Discord notification: ${title}`);
+            } catch (err) {
+                console.error('Webhook error:', err);
+                addLog(`[WEBHOOK ERROR] Failed to send notification: ${err.message}`);
+            }
+        }
+
         // 11 Official Flight Status Definitions
         const STATUS_MAP = {
             "ON_TIME": { label: "準時", icon: "🟢", btnClass: "bg-emerald-600/30 text-emerald-300 border-emerald-500/40 hover:bg-emerald-600/60" },
@@ -689,6 +736,198 @@
             "RETURNED": { label: "返回機坪", icon: "↩️", btnClass: "bg-indigo-600/30 text-indigo-300 border-indigo-500/40 hover:bg-indigo-600/60" },
             "CANCELLED": { label: "已取消", icon: "🔴", btnClass: "bg-red-600/30 text-red-300 border-red-500/40 hover:bg-red-600/60" }
         };
+
+        // Quick Flight Status Updater
+        async function quickUpdateStatus(flightId, newStatus) {
+            const flight = flights.find(f => f.id === flightId);
+            if (!flight) return;
+            const oldStatus = flight.status;
+            flight.status = newStatus;
+            renderAll();
+
+            const stInfo = STATUS_MAP[newStatus] || STATUS_MAP["ON_TIME"];
+            addLog(`[FLIGHT] Flight ${flight.flightNo} status changed from ${oldStatus} to ${newStatus}`);
+
+            const colorMap = {
+                "ON_TIME": 0x10B981, "DELAYED": 0xF59E0B, "CHECKIN_OPEN": 0x3B82F6,
+                "BOARDING": 0xF97316, "DEPARTED": 0x06B6D4, "ARRIVED": 0x14B8A6, "CANCELLED": 0xEF4444
+            };
+
+            sendDiscordEmbed(
+                `✈️ 航班動態更新: ${flight.flightNo}`,
+                `**${flight.origin} ➔ ${flight.dest}** 動態狀況已更新為 **${stInfo.icon} ${stInfo.label}**`,
+                colorMap[newStatus] || 0x00F0FF,
+                [
+                    { name: "機型", value: flight.aircraft || "A321neo", inline: true },
+                    { name: "登機門", value: flight.gate || "01", inline: true },
+                    { name: "時間", value: flight.time || flight.expectTime || "--:--", inline: true }
+                ]
+            );
+        }
+
+        // Flight Modal Management
+        function openFlightModal(id = null) {
+            const modal = document.getElementById('flight-modal');
+            const form = document.getElementById('flight-form');
+            const title = document.getElementById('flight-modal-title');
+            if (form) form.reset();
+            document.getElementById('flight-id').value = '';
+
+            if (id) {
+                const f = flights.find(item => item.id === id);
+                if (f) {
+                    if (title) title.textContent = '編輯航班';
+                    document.getElementById('flight-id').value = f.id;
+                    document.getElementById('flight-no').value = f.flightNo || '';
+                    document.getElementById('flight-aircraft').value = f.aircraft || '';
+                    document.getElementById('flight-origin').value = f.origin || '';
+                    document.getElementById('flight-dest').value = f.dest || '';
+                    document.getElementById('flight-time').value = f.time || f.expectTime || '';
+                    document.getElementById('flight-gate').value = f.gate || '';
+                }
+            } else {
+                if (title) title.textContent = '新增航班';
+            }
+            if (modal) modal.classList.remove('hidden');
+        }
+
+        function closeFlightModal() {
+            const modal = document.getElementById('flight-modal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function handleFlightSubmit(e) {
+            e.preventDefault();
+            const id = document.getElementById('flight-id').value;
+            const flightNo = document.getElementById('flight-no').value.trim();
+            const aircraft = document.getElementById('flight-aircraft').value.trim();
+            const origin = document.getElementById('flight-origin').value.trim();
+            const dest = document.getElementById('flight-dest').value.trim();
+            const time = document.getElementById('flight-time').value.trim();
+            const gate = document.getElementById('flight-gate').value.trim();
+
+            if (id) {
+                const index = flights.findIndex(f => f.id === id);
+                if (index !== -1) {
+                    flights[index] = {
+                        ...flights[index],
+                        flightNo, aircraft, origin, dest, time, gate, expectTime: time,
+                        destination: `${origin} ➔ ${dest}`
+                    };
+                    addLog(`[FLIGHT] Updated flight ${flightNo}`);
+                }
+            } else {
+                const newFlight = {
+                    id: Date.now().toString(),
+                    airline: "中華虛擬航空 CVA",
+                    flightNo, aircraft, origin, dest,
+                    destination: `${origin} ➔ ${dest}`,
+                    time, expectTime: time, gate, status: "ON_TIME"
+                };
+                flights.unshift(newFlight);
+                addLog(`[FLIGHT] Added new flight ${flightNo}`);
+            }
+
+            closeFlightModal();
+            renderAll();
+        }
+
+        function editFlight(id) { openFlightModal(id); }
+        function deleteFlight(id) {
+            flights = flights.filter(f => f.id !== id);
+            addLog(`[FLIGHT] Deleted flight ID: ${id}`);
+            renderAll();
+        }
+
+        // News Modal Management
+        function openNewsModal(id = null) {
+            const modal = document.getElementById('news-modal');
+            const form = document.getElementById('news-form');
+            const title = document.getElementById('news-modal-title');
+            if (form) form.reset();
+            document.getElementById('news-id').value = '';
+
+            if (id) {
+                const n = newsList.find(item => item.id === id);
+                if (n) {
+                    if (title) title.textContent = '編輯公告';
+                    document.getElementById('news-id').value = n.id;
+                    document.getElementById('news-title').value = n.title || '';
+                    document.getElementById('news-content').value = n.content || '';
+                    document.getElementById('news-pinned').checked = !!n.pinned;
+                }
+            } else {
+                if (title) title.textContent = '新增公告';
+            }
+            if (modal) modal.classList.remove('hidden');
+        }
+
+        function closeNewsModal() {
+            const modal = document.getElementById('news-modal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function handleNewsSubmit(e) {
+            e.preventDefault();
+            const id = document.getElementById('news-id').value;
+            const title = document.getElementById('news-title').value.trim();
+            const content = document.getElementById('news-content').value.trim();
+            const pinned = document.getElementById('news-pinned').checked;
+            const dateStr = new Date().toISOString().split('T')[0];
+
+            if (id) {
+                const index = newsList.findIndex(n => n.id === id);
+                if (index !== -1) {
+                    newsList[index] = { ...newsList[index], title, content, pinned };
+                    addLog(`[NEWS] Updated announcement: ${title}`);
+                }
+            } else {
+                const newNews = { id: Date.now().toString(), title, content, pinned, date: dateStr };
+                if (pinned) { newsList.unshift(newNews); } else { newsList.push(newNews); }
+                addLog(`[NEWS] Published new announcement: ${title}`);
+                sendDiscordEmbed(`📢 中華虛擬航空 - 新公告發布`, `**${title}**\n\n${content}`, 0x8B5CF6);
+            }
+
+            closeNewsModal();
+            renderAll();
+        }
+
+        function editNews(id) { openNewsModal(id); }
+        function deleteNews(id) {
+            newsList = newsList.filter(n => n.id !== id);
+            addLog(`[NEWS] Deleted announcement ID: ${id}`);
+            renderAll();
+        }
+
+        // Broadcast System Alerts
+        function sendSystemAlert() {
+            const type = document.getElementById('alert-type').value;
+            const title = document.getElementById('alert-title').value.trim();
+            const body = document.getElementById('alert-body').value.trim();
+
+            if (!title || !body) {
+                addLog('[ALERT WARNING] 標題與內文不能為空！');
+                return;
+            }
+
+            const typeIcons = {
+                'MAINTENANCE': '🛠️ 系統維護通知',
+                'EVENT': '🎉 社群飛行活動',
+                'URGENT': '🔴 緊急營運廣播'
+            };
+            const colors = {
+                'MAINTENANCE': 0xF59E0B,
+                'EVENT': 0x10B981,
+                'URGENT': 0xEF4444
+            };
+
+            const header = typeIcons[type] || '⚠️ 系統推播通知';
+            sendDiscordEmbed(`${header}: ${title}`, body, colors[type] || 0xF59E0B);
+            addLog(`[ALERT] Dispatched broadcast [${type}]: ${title}`);
+
+            document.getElementById('alert-title').value = '';
+            document.getElementById('alert-body').value = '';
+        }
 
         // Push full state to Cloud Storage
         async function syncToCloud() {
@@ -888,7 +1127,7 @@
         }
 
         function renderAll(triggerCloudSync = true) {
-            // Update Badges
+            // Update Badges with Null Safety Guards
             const bgFlight = document.getElementById('badge-flights-count');
             const bgNews = document.getElementById('badge-news-count');
             if (bgFlight) bgFlight.textContent = flights.length;
@@ -899,6 +1138,13 @@
             const dashNews = document.getElementById('dash-news-count');
             if (dashTot) dashTot.textContent = flights.length;
             if (dashNews) dashNews.textContent = newsList.length;
+
+            // API / Sync counters with Null Safety
+            const apiFlights = document.getElementById('api-flights-count');
+            if (apiFlights) apiFlights.textContent = flights.length;
+
+            const apiNews = document.getElementById('api-news-count');
+            if (apiNews) apiNews.textContent = newsList.length;
 
             // Render FIDS Board
             renderFidsBoard();
@@ -1021,11 +1267,20 @@
 
         // Initialization & Auto Polling Setup
         window.onload = function() {
-            document.getElementById('setting-webhook-url').value = webhookUrl;
-            document.getElementById('setting-invite-url').value = DEFAULT_INVITE;
-            document.getElementById('setting-bot-url').value = DEFAULT_BOT;
-            document.getElementById('setting-cloud-endpoint').value = `https://jsonblob.com/api/jsonBlob/`;
-            document.getElementById('setting-cloud-key').value = cloudSyncKey;
+            const webhookEl = document.getElementById('setting-webhook-url');
+            if (webhookEl) webhookEl.value = webhookUrl;
+
+            const inviteEl = document.getElementById('setting-invite-url');
+            if (inviteEl) inviteEl.value = DEFAULT_INVITE;
+
+            const botEl = document.getElementById('setting-bot-url');
+            if (botEl) botEl.value = DEFAULT_BOT;
+
+            const endpointEl = document.getElementById('setting-cloud-endpoint');
+            if (endpointEl) endpointEl.value = `https://jsonblob.com/api/jsonBlob/`;
+
+            const keyEl = document.getElementById('setting-cloud-key');
+            if (keyEl) keyEl.value = cloudSyncKey;
 
             renderAll(false);
             

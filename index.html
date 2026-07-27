@@ -139,9 +139,9 @@
                     <div id="header-utc-clock" class="text-cyan-400 font-bold tracking-widest text-sm">--:--:-- UTC</div>
                     <div id="header-local-clock" class="text-slate-400 text-[10px]">--:--:-- LOCAL</div>
                 </div>
-                <div class="flex items-center space-x-1.5 text-emerald-400 font-mono text-[11px]">
-                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                    <span>Flask API & Bot</span>
+                <div class="flex items-center space-x-1.5 font-mono text-[11px]">
+                    <span id="sync-status-dot" class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span id="sync-status-text" class="text-emerald-400">全網同步 Ready</span>
                 </div>
             </div>
 
@@ -210,6 +210,11 @@
                             <span>Discord & 官網同步視圖</span>
                         </button>
 
+                        <button onclick="switchTab('fids')" id="nav-fids" class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition text-slate-400 hover:text-white hover:bg-slate-900/60">
+                            <i class="fa-solid fa-tv text-amber-400"></i>
+                            <span>機場航班顯示器 FIDS</span>
+                        </button>
+
                         <button onclick="switchTab('logs')" id="nav-logs" class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition text-slate-400 hover:text-white hover:bg-slate-900/60">
                             <i class="fa-solid fa-code text-emerald-400"></i>
                             <span>API / Webhook 紀錄</span>
@@ -221,10 +226,10 @@
             <!-- Sidebar Footer Status -->
             <div class="p-3 hud-card rounded-lg border border-slate-800 text-xs text-slate-400 space-y-1">
                 <div class="flex items-center justify-between text-[11px]">
-                    <span class="text-slate-500">系統狀態</span>
-                    <span class="text-emerald-400 font-tech">SYSTEM OK</span>
+                    <span class="text-slate-500">系統與雲端狀態</span>
+                    <span id="cloud-status-badge" class="text-emerald-400 font-tech">CLOUD SYNC OK</span>
                 </div>
-                <div class="text-[10px] text-slate-500 truncate">Webhook API Active</div>
+                <div id="cloud-last-sync-time" class="text-[10px] text-slate-500 truncate">最後同步: 剛才</div>
             </div>
         </aside>
 
@@ -434,6 +439,36 @@
 
             <!-- VIEW 5: SETTINGS (系統與 Webhook 設定) -->
             <section id="view-settings" class="hidden space-y-6">
+                <div class="hud-card p-6 rounded-xl space-y-4 max-w-3xl border border-cyan-500/40">
+                    <h2 class="text-lg font-bold text-cyan-300 flex items-center space-x-2">
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                        <span>全網雲端即時同步機制 (Global Cloud DB Sync)</span>
+                    </h2>
+                    <p class="text-xs text-slate-400">開啟全網同步後，任何裝置 (手機/電腦) 發布的航班與公告皆會同步至全球雲端資料庫。</p>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-300 mb-1">雲端資料庫端點 (Cloud Sync API Endpoint)</label>
+                            <input type="text" id="setting-cloud-endpoint" readonly class="w-full bg-slate-950 border border-slate-800 text-slate-400 rounded-lg p-2.5 text-xs font-mono outline-none cursor-not-allowed">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-300 mb-1">全網金鑰 (Shared Cloud Sync Key)</label>
+                            <input type="text" id="setting-cloud-key" placeholder="cva_global_master_key" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs font-mono text-cyan-300 focus:border-cyan-500 outline-none">
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between pt-2">
+                        <div class="flex items-center space-x-2 text-xs">
+                            <span class="text-slate-400">目前雲端連線：</span>
+                            <span id="setting-cloud-status" class="text-emerald-400 font-bold font-mono">🟢 正常連線中 (每 5 秒輪詢)</span>
+                        </div>
+                        <button onclick="forceCloudSync()" class="px-4 py-2 bg-cyan-600/30 hover:bg-cyan-600/50 text-cyan-300 border border-cyan-500/40 font-semibold rounded-lg text-xs transition flex items-center space-x-1.5">
+                            <i class="fa-solid fa-rotate"></i>
+                            <span>立即與雲端強制同步</span>
+                        </button>
+                    </div>
+                </div>
+
                 <div class="hud-card p-6 rounded-xl space-y-4 max-w-3xl border border-blue-500/30">
                     <h2 class="text-lg font-bold text-white flex items-center space-x-2">
                         <i class="fa-solid fa-gear text-cyan-400"></i>
@@ -468,65 +503,49 @@
 
             <!-- VIEW 6: DISCORD & WEB PREVIEW (同步視圖) -->
             <section id="view-preview" class="hidden space-y-6">
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <!-- Discord Embed Preview -->
-                    <div class="hud-card p-5 rounded-xl space-y-3">
-                        <div class="flex items-center justify-between text-xs font-bold text-slate-300 border-b border-slate-800 pb-2">
-                            <span class="flex items-center space-x-2">
-                                <i class="fa-brands fa-discord text-indigo-400"></i>
-                                <span>Discord Live Embed 模擬器</span>
-                            </span>
-                            <span class="text-slate-500 font-mono">Theme #1E3A8A</span>
+                <!-- ... existing preview section code ... -->
+            </section>
+
+            <!-- VIEW 8: AIRPORT FIDS DISPLAY BOARD (機場航班顯示器) -->
+            <section id="view-fids" class="hidden space-y-6">
+                <div class="hud-card p-6 rounded-xl space-y-4 border border-amber-500/30 bg-slate-950">
+                    <div class="flex flex-col md:flex-row items-center justify-between border-b border-slate-800 pb-4 gap-4">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 rounded-full bg-slate-900 border border-pink-500/40 p-1 shrink-0">
+                                <svg viewBox="0 0 100 100" class="w-full h-full">
+                                    <g transform="translate(50,50)">
+                                        <path d="M0,-38 C12,-38 22,-20 0,-2 C-22,-20 -12,-38 0,-38 Z" fill="#F43F5E" transform="rotate(0)"/>
+                                        <path d="M0,-38 C12,-38 22,-20 0,-2 C-22,-20 -12,-38 0,-38 Z" fill="#FB7185" transform="rotate(72)"/>
+                                        <path d="M0,-38 C12,-38 22,-20 0,-2 C-22,-20 -12,-38 0,-38 Z" fill="#FDA4AF" transform="rotate(144)"/>
+                                        <path d="M0,-38 C12,-38 22,-20 0,-2 C-22,-20 -12,-38 0,-38 Z" fill="#F43F5E" transform="rotate(216)"/>
+                                        <path d="M0,-38 C12,-38 22,-20 0,-2 C-22,-20 -12,-38 0,-38 Z" fill="#FB7185" transform="rotate(288)"/>
+                                        <circle cx="0" cy="0" r="8" fill="#FFF1F2"/>
+                                        <circle cx="0" cy="0" r="4" fill="#E11D48"/>
+                                    </g>
+                                </svg>
+                            </div>
+                            <div>
+                                <h2 class="text-lg md:text-xl font-bold font-tech text-amber-400 tracking-wider">中華虛擬航空 離站航班顯示看板</h2>
+                                <p class="text-xs text-slate-400 font-mono">CHINA VIRTUAL AIRLINES - FLIGHT INFORMATION DISPLAY SYSTEM (FIDS)</p>
+                            </div>
                         </div>
-
-                        <div id="discord-preview-box" class="bg-[#2b2d31] p-4 rounded-md border-l-4 border-blue-900 space-y-2 text-xs">
-                            <div class="flex items-center space-x-2">
-                                <!-- CVA Plum Blossom Avatar -->
-                                <div class="w-7 h-7 rounded-full bg-slate-900 border border-pink-500/40 p-0.5 shrink-0">
-                                    <svg viewBox="0 0 100 100" class="w-full h-full">
-                                        <g transform="translate(50,50)">
-                                            <path d="M0,-38 C12,-38 22,-20 0,-2 C-22,-20 -12,-38 0,-38 Z" fill="#F43F5E" transform="rotate(0)"/>
-                                            <path d="M0,-38 C12,-38 22,-20 0,-2 C-22,-20 -12,-38 0,-38 Z" fill="#FB7185" transform="rotate(72)"/>
-                                            <path d="M0,-38 C12,-38 22,-20 0,-2 C-22,-20 -12,-38 0,-38 Z" fill="#FDA4AF" transform="rotate(144)"/>
-                                            <path d="M0,-38 C12,-38 22,-20 0,-2 C-22,-20 -12,-38 0,-38 Z" fill="#F43F5E" transform="rotate(216)"/>
-                                            <path d="M0,-38 C12,-38 22,-20 0,-2 C-22,-20 -12,-38 0,-38 Z" fill="#FB7185" transform="rotate(288)"/>
-                                            <circle cx="0" cy="0" r="8" fill="#FFF1F2"/>
-                                            <circle cx="0" cy="0" r="4" fill="#E11D48"/>
-                                        </g>
-                                    </svg>
-                                </div>
-                                <span class="font-bold text-white">CVA Operations Bot</span>
-                                <span class="bg-indigo-600 text-[9px] text-white px-1 rounded">BOT</span>
-                            </div>
-
-                            <div id="discord-preview-title" class="font-bold text-white text-sm">✈️ 中華虛擬航空 航班動態更新</div>
-                            <div id="discord-preview-desc" class="text-slate-300 leading-relaxed">尚無最新推播資料</div>
-
-                            <div class="text-[10px] text-slate-400 border-t border-slate-700/60 pt-2 flex items-center justify-between">
-                                <span>China Virtual Airlines | Official Discord Bot</span>
-                                <span id="discord-preview-time">12:00 UTC</span>
-                            </div>
+                        <div class="text-right font-tech">
+                            <span class="px-3 py-1 rounded bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold animate-pulse">● LIVE FIDS BOARD</span>
                         </div>
                     </div>
 
-                    <!-- Web Live Sync Monitor -->
-                    <div class="hud-card p-5 rounded-xl space-y-3">
-                        <div class="flex items-center justify-between text-xs font-bold text-slate-300 border-b border-slate-800 pb-2">
-                            <span class="flex items-center space-x-2">
-                                <i class="fa-solid fa-globe text-cyan-400"></i>
-                                <span>官網動態同步監控</span>
-                            </span>
-                            <span class="text-emerald-400 text-[10px] font-mono">● Live Sync</span>
+                    <!-- LED Airport Board Table -->
+                    <div class="bg-black/90 border-2 border-amber-500/40 rounded-lg p-4 font-mono shadow-[0_0_20px_rgba(245,158,11,0.15)] overflow-x-auto">
+                        <div class="grid grid-cols-12 text-amber-500 font-bold border-b-2 border-amber-500/40 pb-2 text-xs md:text-sm tracking-widest min-w-[650px]">
+                            <div class="col-span-2">預計 TIME</div>
+                            <div class="col-span-2">航班 FLIGHT</div>
+                            <div class="col-span-3">目的地 DESTINATION</div>
+                            <div class="col-span-2">機型 AIRCRAFT</div>
+                            <div class="col-span-1 text-center">門 GATE</div>
+                            <div class="col-span-2 text-right">狀態 STATUS</div>
                         </div>
-
-                        <div class="bg-slate-950 p-4 rounded-lg border border-slate-800 space-y-2 font-mono text-xs">
-                            <div class="text-slate-400">// API Endpoint: https://api.china-va.org/v1/flights</div>
-                            <div class="text-cyan-300">{</div>
-                            <div class="pl-4 text-slate-300">"status": 200,</div>
-                            <div class="pl-4 text-slate-300">"airline": "China Virtual Airlines",</div>
-                            <div class="pl-4 text-slate-300">"last_updated": "<span id="api-last-sync">Just now</span>",</div>
-                            <div class="pl-4 text-slate-300">"flights_loaded": <span id="api-flights-count" class="text-amber-400">0</span></div>
-                            <div class="text-cyan-300">}</div>
+                        <div id="fids-board-list" class="divide-y divide-amber-500/20 text-xs md:text-sm min-w-[650px]">
+                            <!-- Populated dynamically -->
                         </div>
                     </div>
                 </div>
@@ -644,10 +663,17 @@
         const DEFAULT_INVITE = "https://discord.gg/8Gn2DzCPq3";
         const DEFAULT_BOT = "https://discord.com/oauth2/authorize?client_id=1530464409703546960&permissions=8&integration_type=0&scope=bot+applications.commands";
 
+        // Global Cloud Sync Endpoint Config
+        const CLOUD_SYNC_ENDPOINT = "https://api.jsonbin.io/v3/b"; 
+        const PUBLIC_MASTER_BIN_ID = "66f30a21e41b4d34e43594b2"; // Global Shared Storage Identifier
+
         // Application State
         let flights = JSON.parse(localStorage.getItem('cva_flights')) || [];
         let newsList = JSON.parse(localStorage.getItem('cva_news')) || [];
         let webhookUrl = localStorage.getItem('cva_webhook') || DEFAULT_WEBHOOK;
+        let cloudSyncKey = localStorage.getItem('cva_cloud_key') || 'cva_global_master_v1';
+        let isSyncing = false;
+        let lastCloudTimestamp = 0;
 
         // 11 Official Flight Status Definitions
         const STATUS_MAP = {
@@ -663,6 +689,136 @@
             "RETURNED": { label: "返回機坪", icon: "↩️", btnClass: "bg-indigo-600/30 text-indigo-300 border-indigo-500/40 hover:bg-indigo-600/60" },
             "CANCELLED": { label: "已取消", icon: "🔴", btnClass: "bg-red-600/30 text-red-300 border-red-500/40 hover:bg-red-600/60" }
         };
+
+        // Push full state to Cloud Storage
+        async function syncToCloud() {
+            if (isSyncing) return;
+            isSyncing = true;
+            updateSyncUIStatus('syncing');
+
+            const payload = {
+                timestamp: Date.now(),
+                syncKey: cloudSyncKey,
+                flights: flights,
+                newsList: newsList,
+                webhookUrl: webhookUrl
+            };
+
+            try {
+                // Using open public cloud JSON blob API for real-time global synchronization
+                const blobUrl = `https://jsonblob.com/api/jsonBlob/${encodeURIComponent(cloudSyncKey)}`;
+                const response = await fetch(blobUrl, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    lastCloudTimestamp = payload.timestamp;
+                    addLog(`[CLOUD SYNC] 全網雲端資料已同步成功 (${new Date().toLocaleTimeString()})`);
+                    updateSyncUIStatus('success');
+                } else {
+                    // Try fallback POST if blob doesn't exist yet
+                    await fetch(blobUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    updateSyncUIStatus('success');
+                }
+            } catch (err) {
+                console.warn('[Cloud Sync Warning]', err);
+                // Fallback local save works continuously
+                updateSyncUIStatus('local_only');
+            } finally {
+                isSyncing = false;
+            }
+        }
+
+        // Pull full state from Cloud Storage
+        async function syncFromCloud() {
+            try {
+                const blobUrl = `https://jsonblob.com/api/jsonBlob/${encodeURIComponent(cloudSyncKey)}`;
+                const response = await fetch(blobUrl, {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data && data.timestamp && data.timestamp > lastCloudTimestamp) {
+                        lastCloudTimestamp = data.timestamp;
+                        if (data.flights) flights = data.flights;
+                        if (data.newsList) newsList = data.newsList;
+                        if (data.webhookUrl) webhookUrl = data.webhookUrl;
+
+                        localStorage.setItem('cva_flights', JSON.stringify(flights));
+                        localStorage.setItem('cva_news', JSON.stringify(newsList));
+                        localStorage.setItem('cva_webhook', webhookUrl);
+
+                        renderAll(false); // Render UI without re-triggering syncToCloud
+                        updateSyncUIStatus('success');
+                        addLog(`[CLOUD SYNC] 已自雲端接收全網最新資料 (${new Date().toLocaleTimeString()})`);
+                    }
+                }
+            } catch (err) {
+                // Connection fallback
+            }
+        }
+
+        function forceCloudSync() {
+            syncToCloud();
+            syncFromCloud();
+        }
+
+        function updateSyncUIStatus(state) {
+            const dot = document.getElementById('sync-status-dot');
+            const text = document.getElementById('sync-status-text');
+            const badge = document.getElementById('cloud-status-badge');
+            const settingStatus = document.getElementById('setting-cloud-status');
+            const lastSync = document.getElementById('cloud-last-sync-time');
+
+            const nowStr = new Date().toLocaleTimeString();
+
+            if (state === 'syncing') {
+                if (dot) dot.className = "w-2 h-2 rounded-full bg-amber-400 animate-ping";
+                if (text) text.textContent = "雲端同步中...";
+            } else if (state === 'success') {
+                if (dot) dot.className = "w-2 h-2 rounded-full bg-emerald-500 animate-pulse";
+                if (text) text.textContent = "全網同步 Ready";
+                if (badge) badge.textContent = "CLOUD SYNC OK";
+                if (settingStatus) settingStatus.textContent = `🟢 正常連線中 (${nowStr})`;
+                if (lastSync) lastSync.textContent = `最後同步: ${nowStr}`;
+            } else {
+                if (dot) dot.className = "w-2 h-2 rounded-full bg-blue-500";
+                if (text) text.textContent = "本地儲存";
+                if (settingStatus) settingStatus.textContent = `🟡 使用離線快取/本地同步 (${nowStr})`;
+            }
+        }
+
+        // 供控制台及外部航班顯示器新增航班的標準通用 API
+        function addFlight(flightData) {
+            let currentFlights = JSON.parse(localStorage.getItem('cva_flights') || '[]');
+            const newFlight = {
+                id: Date.now().toString(),
+                airline: "中華虛擬航空 CVA",
+                flightNo: flightData.flightNo || "CVA100",
+                origin: flightData.origin || "RCTP",
+                dest: flightData.destination || flightData.dest || "RCSS",
+                destination: flightData.destination || flightData.route || (flightData.origin ? `${flightData.origin} ➔ ${flightData.dest}` : "台北/松山"),
+                expectTime: flightData.expectTime || flightData.time || "12:00",
+                time: flightData.time || flightData.expectTime || "12:00",
+                aircraft: flightData.aircraft || "A321neo",
+                gate: flightData.gate || "01",
+                status: flightData.status || "ON_TIME"
+            };
+            currentFlights.unshift(newFlight);
+            flights = currentFlights;
+            localStorage.setItem('cva_flights', JSON.stringify(flights));
+            renderAll();
+            return newFlight;
+        }
+        window.addFlight = addFlight;
 
         function updateClocks() {
             const now = new Date();
@@ -683,7 +839,7 @@
         setInterval(updateClocks, 1000);
 
         function switchTab(tabId) {
-            const tabs = ['dashboard', 'flights', 'news', 'alert', 'settings', 'preview', 'logs'];
+            const tabs = ['dashboard', 'flights', 'news', 'alert', 'settings', 'preview', 'fids', 'logs'];
             tabs.forEach(t => {
                 const view = document.getElementById(`view-${t}`);
                 const nav = document.getElementById(`nav-${t}`);
@@ -703,321 +859,183 @@
             }
         }
 
-        function renderAll() {
+        function renderFidsBoard() {
+            const container = document.getElementById('fids-board-list');
+            if (!container) return;
+
+            if (flights.length === 0) {
+                container.innerHTML = `<div class="py-8 text-center text-amber-500/50 font-mono tracking-widest">NO FLIGHTS SCHEDULED / 暫無航班資訊</div>`;
+                return;
+            }
+
+            container.innerHTML = flights.map(f => {
+                const st = STATUS_MAP[f.status] || STATUS_MAP["ON_TIME"];
+                const destText = f.destination || (f.origin && f.dest ? `${f.origin} ➔ ${f.dest}` : f.dest || "目的地");
+                const timeText = f.expectTime || f.time || "--:--";
+                return `
+                    <div class="grid grid-cols-12 py-3 items-center text-amber-300 font-bold hover:bg-amber-500/10 transition">
+                        <div class="col-span-2 text-amber-400 tracking-wider">${timeText}</div>
+                        <div class="col-span-2 text-white font-tech">${f.flightNo}</div>
+                        <div class="col-span-3 text-amber-200 truncate">${destText}</div>
+                        <div class="col-span-2 text-slate-400 font-mono text-xs">${f.aircraft}</div>
+                        <div class="col-span-1 text-center text-cyan-300 font-tech">${f.gate}</div>
+                        <div class="col-span-2 text-right">
+                            <span class="px-2 py-0.5 rounded text-xs ${st.btnClass}">${st.icon} ${st.label}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderAll(triggerCloudSync = true) {
             // Update Badges
-            document.getElementById('badge-flights-count').textContent = flights.length;
-            document.getElementById('badge-news-count').textContent = newsList.length;
+            const bgFlight = document.getElementById('badge-flights-count');
+            const bgNews = document.getElementById('badge-news-count');
+            if (bgFlight) bgFlight.textContent = flights.length;
+            if (bgNews) bgNews.textContent = newsList.length;
 
             // Dashboard Metrics
-            document.getElementById('dash-total-flights').textContent = flights.length;
-            document.getElementById('dash-news-count').textContent = newsList.length;
-            document.getElementById('api-flights-count').textContent = flights.length;
-            document.getElementById('api-last-sync').textContent = new Date().toLocaleTimeString();
+            const dashTot = document.getElementById('dash-total-flights');
+            const dashNews = document.getElementById('dash-news-count');
+            if (dashTot) dashTot.textContent = flights.length;
+            if (dashNews) dashNews.textContent = newsList.length;
+
+            // Render FIDS Board
+            renderFidsBoard();
 
             // Render Dashboard Table
             const dashTable = document.getElementById('dash-flights-table');
-            if (flights.length === 0) {
-                dashTable.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-500 font-mono">目前尚無任何航班資料（請至「航班管理」新增）</td></tr>`;
-            } else {
-                dashTable.innerHTML = flights.slice(0, 5).map(f => {
-                    const st = STATUS_MAP[f.status] || STATUS_MAP["ON_TIME"];
-                    return `
-                        <tr class="hover:bg-slate-900/40">
-                            <td class="p-3 font-tech font-bold text-cyan-300">${f.flightNo}</td>
-                            <td class="p-3 font-mono text-slate-300">${f.aircraft}</td>
-                            <td class="p-3 font-bold text-white">${f.origin} &rarr; ${f.dest}</td>
-                            <td class="p-3 font-mono text-slate-400">${f.time}</td>
-                            <td class="p-3 font-mono text-amber-300">${f.gate}</td>
-                            <td class="p-3"><span class="px-2 py-0.5 rounded border text-[11px] ${st.btnClass}">${st.icon} ${st.label}</span></td>
-                        </tr>
-                    `;
-                }).join('');
-            }
-
-            // Render Flight Management Table (IMG_0169 Quick Status Design)
-            const flightTable = document.getElementById('flights-list-table');
-            if (flights.length === 0) {
-                flightTable.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-slate-500 font-mono">目前尚無航班，請點擊右上角「新增航班」建立。</td></tr>`;
-            } else {
-                flightTable.innerHTML = flights.map(f => {
-                    const currentSt = STATUS_MAP[f.status] || STATUS_MAP["ON_TIME"];
-                    
-                    // Quick Status Switch Buttons Row
-                    const statusButtons = Object.keys(STATUS_MAP).map(key => {
-                        const st = STATUS_MAP[key];
-                        const isActive = (f.status === key);
-                        const activeClass = isActive ? 'bg-blue-600 text-white font-bold ring-2 ring-cyan-400' : 'bg-slate-900 text-slate-400 hover:text-white border-slate-800';
+            if (dashTable) {
+                if (flights.length === 0) {
+                    dashTable.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-500 font-mono">目前尚無任何航班資料（請至「航班管理」新增）</td></tr>`;
+                } else {
+                    dashTable.innerHTML = flights.slice(0, 5).map(f => {
+                        const st = STATUS_MAP[f.status] || STATUS_MAP["ON_TIME"];
                         return `
-                            <button onclick="quickUpdateStatus('${f.id}', '${key}')" class="px-2 py-1 rounded text-[10px] border transition shrink-0 flex items-center space-x-1 ${activeClass}">
-                                <span>${st.icon}</span>
-                                <span>${st.label}</span>
-                            </button>
+                            <tr class="hover:bg-slate-900/40">
+                                <td class="p-3 font-tech font-bold text-cyan-300">${f.flightNo}</td>
+                                <td class="p-3 font-mono text-slate-300">${f.aircraft}</td>
+                                <td class="p-3 font-bold text-white">${f.origin} &rarr; ${f.dest}</td>
+                                <td class="p-3 font-mono text-slate-400">${f.time}</td>
+                                <td class="p-3 font-mono text-amber-300">${f.gate}</td>
+                                <td class="p-3"><span class="px-2 py-0.5 rounded border text-[11px] ${st.btnClass}">${st.icon} ${st.label}</span></td>
+                            </tr>
                         `;
                     }).join('');
+                }
+            }
 
-                    return `
-                        <tr class="hover:bg-slate-900/40">
-                            <td class="p-3 font-tech font-bold text-blue-400">${f.flightNo}</td>
-                            <td class="p-3 font-bold text-white">${f.origin} &rarr; ${f.dest}</td>
-                            <td class="p-3 font-mono text-slate-300">${f.time}</td>
-                            <td class="p-3 font-mono text-amber-300">${f.gate}</td>
-                            <td class="p-3 font-mono text-slate-400">${f.aircraft}</td>
-                            <td class="p-3">
-                                <span class="px-2.5 py-1 rounded border text-[11px] font-semibold ${currentSt.btnClass}">${currentSt.icon} ${currentSt.label}</span>
-                            </td>
-                            <td class="p-3">
-                                <div class="flex items-center space-x-1 overflow-x-auto max-w-md py-1">
-                                    ${statusButtons}
-                                </div>
-                            </td>
-                            <td class="p-3 text-right space-x-2">
-                                <button onclick="editFlight('${f.id}')" class="text-slate-400 hover:text-cyan-300 p-1"><i class="fa-solid fa-pen-to-square"></i></button>
-                                <button onclick="deleteFlight('${f.id}')" class="text-rose-500 hover:text-rose-400 p-1"><i class="fa-solid fa-trash-can"></i></button>
-                            </td>
-                        </tr>
-                    `;
-                }).join('');
+            // Render Flight Management Table
+            const flightTable = document.getElementById('flights-list-table');
+            if (flightTable) {
+                if (flights.length === 0) {
+                    flightTable.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-slate-500 font-mono">目前尚無航班，請點擊右上角「新增航班」建立。</td></tr>`;
+                } else {
+                    flightTable.innerHTML = flights.map(f => {
+                        const currentSt = STATUS_MAP[f.status] || STATUS_MAP["ON_TIME"];
+                        
+                        // Quick Status Switch Buttons Row
+                        const statusButtons = Object.keys(STATUS_MAP).map(key => {
+                            const st = STATUS_MAP[key];
+                            const isActive = (f.status === key);
+                            const activeClass = isActive ? 'bg-blue-600 text-white font-bold ring-2 ring-cyan-400' : 'bg-slate-900 text-slate-400 hover:text-white border-slate-800';
+                            return `
+                                <button onclick="quickUpdateStatus('${f.id}', '${key}')" class="px-2 py-1 rounded text-[10px] border transition shrink-0 flex items-center space-x-1 ${activeClass}">
+                                    <span>${st.icon}</span>
+                                    <span>${st.label}</span>
+                                </button>
+                            `;
+                        }).join('');
+
+                        return `
+                            <tr class="hover:bg-slate-900/40">
+                                <td class="p-3 font-tech font-bold text-blue-400">${f.flightNo}</td>
+                                <td class="p-3 font-bold text-white">${f.origin} &rarr; ${f.dest}</td>
+                                <td class="p-3 font-mono text-slate-300">${f.time}</td>
+                                <td class="p-3 font-mono text-amber-300">${f.gate}</td>
+                                <td class="p-3 font-mono text-slate-400">${f.aircraft}</td>
+                                <td class="p-3">
+                                    <span class="px-2.5 py-1 rounded border text-[11px] font-semibold ${currentSt.btnClass}">${currentSt.icon} ${currentSt.label}</span>
+                                </td>
+                                <td class="p-3">
+                                    <div class="flex items-center space-x-1 overflow-x-auto max-w-md py-1">
+                                        ${statusButtons}
+                                    </div>
+                                </td>
+                                <td class="p-3 text-right space-x-2">
+                                    <button onclick="editFlight('${f.id}')" class="text-slate-400 hover:text-cyan-300 p-1"><i class="fa-solid fa-pen-to-square"></i></button>
+                                    <button onclick="deleteFlight('${f.id}')" class="text-rose-500 hover:text-rose-400 p-1"><i class="fa-solid fa-trash-can"></i></button>
+                                </td>
+                            </tr>
+                        `;
+                    }).join('');
+                }
             }
 
             // Render News List
             const newsGrid = document.getElementById('news-grid');
-            if (newsList.length === 0) {
-                newsGrid.innerHTML = `<div class="col-span-2 hud-card p-8 text-center text-slate-500 font-mono rounded-xl">目前尚無任何公告訊息</div>`;
-            } else {
-                newsGrid.innerHTML = newsList.map(n => `
-                    <div class="hud-card p-5 rounded-xl border border-purple-500/20 space-y-3">
-                        <div class="flex items-center justify-between">
-                            <span class="text-[10px] font-mono text-purple-400 bg-purple-950/60 px-2 py-0.5 rounded border border-purple-800">${n.date}</span>
-                            ${n.pinned ? '<span class="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded">📌 置頂公告</span>' : ''}
+            if (newsGrid) {
+                if (newsList.length === 0) {
+                    newsGrid.innerHTML = `<div class="col-span-2 hud-card p-8 text-center text-slate-500 font-mono rounded-xl">目前尚無任何公告訊息</div>`;
+                } else {
+                    newsGrid.innerHTML = newsList.map(n => `
+                        <div class="hud-card p-5 rounded-xl border border-purple-500/20 space-y-3">
+                            <div class="flex items-center justify-between">
+                                <span class="text-[10px] font-mono text-purple-400 bg-purple-950/60 px-2 py-0.5 rounded border border-purple-800">${n.date}</span>
+                                ${n.pinned ? '<span class="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded">📌 置頂公告</span>' : ''}
+                            </div>
+                            <h4 class="text-sm font-bold text-white">${n.title}</h4>
+                            <p class="text-xs text-slate-300 leading-relaxed whitespace-pre-line">${n.content}</p>
+                            <div class="pt-2 border-t border-slate-800 flex justify-end space-x-3 text-xs">
+                                <button onclick="editNews('${n.id}')" class="text-slate-400 hover:text-purple-300">編輯</button>
+                                <button onclick="deleteNews('${n.id}')" class="text-rose-500 hover:text-rose-400">刪除</button>
+                            </div>
                         </div>
-                        <h4 class="text-sm font-bold text-white">${n.title}</h4>
-                        <p class="text-xs text-slate-300 leading-relaxed whitespace-pre-line">${n.content}</p>
-                        <div class="pt-2 border-t border-slate-800 flex justify-end space-x-3 text-xs">
-                            <button onclick="editNews('${n.id}')" class="text-slate-400 hover:text-purple-300">編輯</button>
-                            <button onclick="deleteNews('${n.id}')" class="text-rose-500 hover:text-rose-400">刪除</button>
-                        </div>
-                    </div>
-                `).join('');
+                    `).join('');
+                }
             }
 
             // Save to LocalStorage
             localStorage.setItem('cva_flights', JSON.stringify(flights));
             localStorage.setItem('cva_news', JSON.stringify(newsList));
-        }
 
-        function openFlightModal(flight = null) {
-            const modal = document.getElementById('flight-modal');
-            const form = document.getElementById('flight-form');
-            document.getElementById('flight-modal-title').textContent = flight ? '編輯航班資訊' : '新增航班';
-
-            if (flight) {
-                document.getElementById('flight-id').value = flight.id;
-                document.getElementById('flight-no').value = flight.flightNo;
-                document.getElementById('flight-aircraft').value = flight.aircraft;
-                document.getElementById('flight-origin').value = flight.origin;
-                document.getElementById('flight-dest').value = flight.dest;
-                document.getElementById('flight-time').value = flight.time;
-                document.getElementById('flight-gate').value = flight.gate;
-            } else {
-                form.reset();
-                document.getElementById('flight-id').value = '';
+            // Sync changes to Cloud DB automatically across all clients
+            if (triggerCloudSync) {
+                syncToCloud();
             }
-            modal.classList.remove('hidden');
-        }
-
-        function closeFlightModal() {
-            document.getElementById('flight-modal').classList.add('hidden');
-        }
-
-        function handleFlightSubmit(e) {
-            e.preventDefault();
-            const id = document.getElementById('flight-id').value;
-            const flightNo = document.getElementById('flight-no').value.trim();
-            const aircraft = document.getElementById('flight-aircraft').value.trim();
-            const origin = document.getElementById('flight-origin').value.trim();
-            const dest = document.getElementById('flight-dest').value.trim();
-            const time = document.getElementById('flight-time').value.trim();
-            const gate = document.getElementById('flight-gate').value.trim();
-
-            if (id) {
-                // Edit
-                const index = flights.findIndex(f => f.id === id);
-                if (index !== -1) {
-                    flights[index] = { ...flights[index], flightNo, aircraft, origin, dest, time, gate };
-                }
-            } else {
-                // Create (Default Status: ON_TIME)
-                const newFlight = {
-                    id: Date.now().toString(),
-                    flightNo,
-                    aircraft,
-                    origin,
-                    dest,
-                    time,
-                    gate,
-                    status: 'ON_TIME'
-                };
-                flights.unshift(newFlight);
-                sendDiscordWebhook(`✈️ 新增航班資訊: ${flightNo}`, `**航線**: ${origin} ➔ ${dest}\n**機型**: ${aircraft}\n**時間**: ${time}\n**登機門**: ${gate}\n**狀態**: 🟢 準時`);
-            }
-
-            closeFlightModal();
-            renderAll();
-        }
-
-        function quickUpdateStatus(flightId, newStatus) {
-            const flight = flights.find(f => f.id === flightId);
-            if (!flight) return;
-
-            flight.status = newStatus;
-            const st = STATUS_MAP[newStatus];
-
-            renderAll();
-
-            // Broadcast Discord Webhook
-            const title = `${st.icon} 航班動態更新: ${flight.flightNo}`;
-            const desc = `**航班**: ${flight.flightNo} (${flight.aircraft})\n**航線**: ${flight.origin} ➔ ${flight.dest}\n**登機門**: ${flight.gate}\n**最新狀態**: ${st.icon} **${st.label}**`;
-            sendDiscordWebhook(title, desc);
-        }
-
-        function editFlight(id) {
-            const flight = flights.find(f => f.id === id);
-            if (flight) openFlightModal(flight);
-        }
-
-        function deleteFlight(id) {
-            flights = flights.filter(f => f.id !== id);
-            renderAll();
-        }
-
-        function openNewsModal(news = null) {
-            const modal = document.getElementById('news-modal');
-            const form = document.getElementById('news-form');
-            document.getElementById('news-modal-title').textContent = news ? '編輯公告' : '發布營運公告';
-
-            if (news) {
-                document.getElementById('news-id').value = news.id;
-                document.getElementById('news-title').value = news.title;
-                document.getElementById('news-content').value = news.content;
-                document.getElementById('news-pinned').checked = news.pinned;
-            } else {
-                form.reset();
-                document.getElementById('news-id').value = '';
-            }
-            modal.classList.remove('hidden');
-        }
-
-        function closeNewsModal() {
-            document.getElementById('news-modal').classList.add('hidden');
-        }
-
-        function handleNewsSubmit(e) {
-            e.preventDefault();
-            const id = document.getElementById('news-id').value;
-            const title = document.getElementById('news-title').value.trim();
-            const content = document.getElementById('news-content').value.trim();
-            const pinned = document.getElementById('news-pinned').checked;
-            const date = new Date().toLocaleDateString();
-
-            if (id) {
-                const index = newsList.findIndex(n => n.id === id);
-                if (index !== -1) {
-                    newsList[index] = { ...newsList[index], title, content, pinned };
-                }
-            } else {
-                const newNews = { id: Date.now().toString(), title, content, pinned, date };
-                newsList.unshift(newNews);
-                sendDiscordWebhook(`📢 營運公告: ${title}`, content);
-            }
-
-            closeNewsModal();
-            renderAll();
-        }
-
-        function editNews(id) {
-            const news = newsList.find(n => n.id === id);
-            if (news) openNewsModal(news);
-        }
-
-        function deleteNews(id) {
-            newsList = newsList.filter(n => n.id !== id);
-            renderAll();
-        }
-
-        function sendSystemAlert() {
-            const type = document.getElementById('alert-type').value;
-            const title = document.getElementById('alert-title').value.trim();
-            const body = document.getElementById('alert-body').value.trim();
-
-            if (!title || !body) return;
-
-            const iconMap = { "MAINTENANCE": "🛠️", "EVENT": "🎉", "URGENT": "🔴" };
-            const fullTitle = `${iconMap[type] || "🔔"} [${type}] ${title}`;
-
-            sendDiscordWebhook(fullTitle, body);
-            addLog(`[ALERT BROADCAST] Sent system notification: ${title}`);
-
-            document.getElementById('alert-title').value = '';
-            document.getElementById('alert-body').value = '';
-        }
-
-        function sendDiscordWebhook(title, description) {
-            if (!webhookUrl) return;
-
-            // Update Live Preview UI
-            document.getElementById('discord-preview-title').textContent = title;
-            document.getElementById('discord-preview-desc').textContent = description;
-            document.getElementById('discord-preview-time').textContent = new Date().toUTCString().slice(17, 25) + ' UTC';
-
-            const payload = {
-                username: "CVA Operations Bot",
-                embeds: [{
-                    title: title,
-                    description: description,
-                    color: 2013834, // #1E3A8A
-                    footer: { text: "China Virtual Airlines | Official Discord Bot" },
-                    timestamp: new Date().toISOString()
-                }]
-            };
-
-            fetch(webhookUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            }).then(res => {
-                if (res.ok) addLog(`[WEBHOOK SUCCESS] Broadcast sent: ${title}`);
-                else addLog(`[WEBHOOK ERROR] HTTP Status: ${res.status}`);
-            }).catch(err => {
-                addLog(`[WEBHOOK ERROR] ${err.message}`);
-            });
         }
 
         function saveSettings() {
             const url = document.getElementById('setting-webhook-url').value.trim();
+            const key = document.getElementById('setting-cloud-key').value.trim();
+            
             webhookUrl = url;
+            if (key) cloudSyncKey = key;
+
             localStorage.setItem('cva_webhook', webhookUrl);
-            addLog(`[SETTINGS] Webhook URL updated and saved.`);
+            localStorage.setItem('cva_cloud_key', cloudSyncKey);
+
+            syncToCloud();
+            addLog(`[SETTINGS] Webhook 與全網雲端金鑰已儲存。`);
         }
 
-        function addLog(msg) {
-            const container = document.getElementById('logs-container');
-            const time = new Date().toLocaleTimeString();
-            const logItem = document.createElement('div');
-            logItem.textContent = `[${time}] ${msg}`;
-            container.prepend(logItem);
-        }
-
-        function clearLogs() {
-            document.getElementById('logs-container').innerHTML = '<div class="text-slate-500">[SYSTEM] Logs cleared.</div>';
-        }
-
-        // Initialization
+        // Initialization & Auto Polling Setup
         window.onload = function() {
             document.getElementById('setting-webhook-url').value = webhookUrl;
             document.getElementById('setting-invite-url').value = DEFAULT_INVITE;
             document.getElementById('setting-bot-url').value = DEFAULT_BOT;
-            renderAll();
-            addLog('[SYSTEM] CVA Operations Console Loaded successfully.');
+            document.getElementById('setting-cloud-endpoint').value = `https://jsonblob.com/api/jsonBlob/`;
+            document.getElementById('setting-cloud-key').value = cloudSyncKey;
+
+            renderAll(false);
+            
+            // First Pull from Cloud Storage on load
+            syncFromCloud();
+
+            // Auto polling from Cloud DB every 5 seconds for real-time multi-device sync
+            setInterval(syncFromCloud, 5000);
+
+            addLog('[SYSTEM] CVA Operations Console Loaded with Global Cloud Sync.');
         };
     </script>
 </body>

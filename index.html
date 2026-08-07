@@ -247,7 +247,7 @@
 
                     <div class="bg-slate-800 border border-slate-700/60 rounded-2xl p-4 flex items-center justify-between">
                         <div>
-                            <p class="text-xs font-medium text-slate-400">飛行中 / 準備中</p>
+                            <p class="text-xs font-medium text-slate-400">執行中航班</p>
                             <h3 id="dashActiveFlights" class="text-2xl font-bold text-amber-400 mt-1">0</h3>
                         </div>
                         <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
@@ -514,12 +514,15 @@
                     <div>
                         <label class="block text-xs font-medium text-slate-300 mb-1">航班狀態</label>
                         <select id="flightStatus" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-sm focus:outline-none focus:border-indigo-500">
-                            <option value="準備中">準備中</option>
-                            <option value="登機">登機</option>
-                            <option value="飛行中">飛行中</option>
-                            <option value="已完成">已完成</option>
-                            <option value="延誤">延誤</option>
-                            <option value="取消">取消</option>
+                            <option value="🟢 準備中">🟢 準備中</option>
+                            <option value="🛫 登機中">🛫 登機中</option>
+                            <option value="⏳ 等待起飛">⏳ 等待起飛</option>
+                            <option value="✈️ 飛行中">✈️ 飛行中</option>
+                            <option value="🛬 準備降落">🛬 準備降落</option>
+                            <option value="✅ 已完成">✅ 已完成</option>
+                            <option value="🟡 延誤">🟡 延誤</option>
+                            <option value="🔴 取消">🔴 取消</option>
+                            <option value="⚫ 航班終止">⚫ 航班終止</option>
                         </select>
                     </div>
                 </div>
@@ -631,6 +634,18 @@
             progress: "🔧 製作進度",
             admin: "🛠️ 管理公告"
         };
+
+        const FLIGHT_STATUS_LIST = [
+            '🟢 準備中',
+            '🛫 登機中',
+            '⏳ 等待起飛',
+            '✈️ 飛行中',
+            '🛬 準備降落',
+            '✅ 已完成',
+            '🟡 延誤',
+            '🔴 取消',
+            '⚫ 航班終止'
+        ];
 
         // 2. 系統狀態數據
         let currentUser = null;
@@ -772,7 +787,7 @@
 
         function renderDashboard() {
             document.getElementById('dashTotalFlights').innerText = flights.length;
-            document.getElementById('dashActiveFlights').innerText = flights.filter(f => ['準備中', '登機', '飛行中'].includes(f.status)).length;
+            document.getElementById('dashActiveFlights').innerText = flights.filter(f => ['🟢 準備中', '🛫 登機中', '⏳ 等待起飛', '✈️ 飛行中', '🛬 準備降落'].includes(f.status)).length;
             document.getElementById('dashTotalPilots').innerText = pilots.length;
             document.getElementById('dashTotalAnnouncements').innerText = announcements.length;
 
@@ -961,7 +976,7 @@
                 document.getElementById('flightArr').value = '';
                 document.getElementById('flightAircraft').value = '';
                 document.getElementById('flightTime').value = '';
-                document.getElementById('flightStatus').value = '準備中';
+                document.getElementById('flightStatus').value = '🟢 準備中';
             }
             document.getElementById('flightModal').classList.remove('hidden');
         }
@@ -1008,14 +1023,22 @@
             const f = flights.find(x => x.id === id);
             if (!f) return;
 
-            const newStatus = prompt(`請輸入 ${f.code} 的最新航班狀態 (準備中 / 登機 / 飛行中 / 已完成 / 延誤 / 取消):`, f.status);
-            if (newStatus && newStatus !== f.status) {
+            const promptText = `請選擇 ${f.code} 的最新航班狀態數字：\n` + 
+                FLIGHT_STATUS_LIST.map((st, i) => `${i + 1}. ${st}`).join('\n');
+
+            const choice = prompt(promptText, FLIGHT_STATUS_LIST.indexOf(f.status) + 1 || "1");
+            const index = parseInt(choice) - 1;
+
+            if (!isNaN(index) && index >= 0 && index < FLIGHT_STATUS_LIST.length) {
+                const newStatus = FLIGHT_STATUS_LIST[index];
                 f.status = newStatus;
                 saveData('flights', flights);
                 addLog(`駕駛員/管理員 ${currentUser.name} 將航班 ${f.code} 狀態更改為: ${newStatus}`);
                 renderAll();
 
                 pushFlightToDiscord(f.code, f.dep, f.arr, f.status, f.pilot, f.time);
+            } else if (choice !== null) {
+                showToast('請輸入有效的數字編號', 'error');
             }
         }
 
@@ -1147,7 +1170,7 @@
             sendDiscordWebhook('flight', {
                 title: `✈️ 中華虛擬航空 航班動態通知 [${code}]`,
                 description: `航班 **${code}** 最新狀態為：**${status}**`,
-                color: status === '延誤' ? 0xCC0000 : (status === '飛行中' ? 0x003366 : 0x00FF00),
+                color: status.includes('延誤') || status.includes('取消') || status.includes('終止') ? 0xCC0000 : (status.includes('飛行') ? 0x003366 : 0x00FF00),
                 fields: [
                     { name: "航線", value: `${dep} ✈️ ${arr}`, inline: true },
                     { name: "狀態", value: status, inline: true },
@@ -1157,7 +1180,7 @@
             });
         }
 
-        // 重構後的廣義 Discord Webhook 發送機制
+        // 廣義 Discord Webhook 發送機制
         function sendDiscordWebhook(channelKey, embedData) {
             const webhookUrl = WEBHOOKS[channelKey] || (channels.find(c => c.id === channelKey) || {}).webhook;
             if (!webhookUrl) {
@@ -1165,7 +1188,6 @@
                 return;
             }
 
-            // 組裝標準 Embed Payload (不使用不相容的 data URI 做頭像)
             const payload = {
                 username: "中華虛擬航空 CVA 航務系統",
                 embeds: [{
@@ -1175,7 +1197,6 @@
                 }]
             };
 
-            // 雙重發送策略 (優先使用標準 POST，若被瀏覽器擋下則相容性備援)
             fetch(webhookUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -1185,7 +1206,6 @@
                     addLog(`[Discord 推播成功] 發送至: ${CHANNEL_NAMES[channelKey] || channelKey}`);
                     showToast(`已成功推播至 Discord！`, 'success');
                 } else {
-                    // 若 Discord 回傳 400，嘗試合併成純文字 fallback 發送
                     sendDiscordTextFallback(webhookUrl, embedData, channelKey);
                 }
             }).catch(err => {
@@ -1200,7 +1220,7 @@
             
             fetch(webhookUrl, {
                 method: 'POST',
-                mode: 'no-cors', // 繞過跨網域阻擋
+                mode: 'no-cors',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     username: "中華虛擬航空 CVA",
@@ -1260,15 +1280,16 @@
         }
 
         function getStatusBadgeClass(status) {
-            switch(status) {
-                case '準備中': return 'bg-slate-700 text-slate-300 border border-slate-600';
-                case '登機': return 'bg-blue-500/20 text-blue-400 border border-blue-500/30';
-                case '飛行中': return 'bg-amber-500/20 text-amber-400 border border-amber-500/30';
-                case '已完成': return 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
-                case '延誤': return 'bg-rose-500/20 text-rose-400 border border-rose-500/30';
-                case '取消': return 'bg-slate-800 text-slate-500 line-through border border-slate-700';
-                default: return 'bg-slate-700 text-slate-300';
-            }
+            if (status.includes('準備中')) return 'bg-slate-700 text-slate-300 border border-slate-600';
+            if (status.includes('登機中')) return 'bg-blue-500/20 text-blue-400 border border-blue-500/30';
+            if (status.includes('等待起飛')) return 'bg-sky-500/20 text-sky-400 border border-sky-500/30';
+            if (status.includes('飛行中')) return 'bg-amber-500/20 text-amber-400 border border-amber-500/30';
+            if (status.includes('準備降落')) return 'bg-purple-500/20 text-purple-400 border border-purple-500/30';
+            if (status.includes('已完成')) return 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
+            if (status.includes('延誤')) return 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30';
+            if (status.includes('取消')) return 'bg-rose-500/20 text-rose-400 border border-rose-500/30';
+            if (status.includes('航班終止')) return 'bg-slate-800 text-slate-500 border border-slate-700';
+            return 'bg-slate-700 text-slate-300';
         }
 
         function escapeHtml(str) {

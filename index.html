@@ -247,7 +247,7 @@
 
                     <div class="bg-slate-800 border border-slate-700/60 rounded-2xl p-4 flex items-center justify-between">
                         <div>
-                            <p class="text-xs font-medium text-slate-400">執行中航班</p>
+                            <p class="text-xs font-medium text-slate-400">飛行中 / 準備中</p>
                             <h3 id="dashActiveFlights" class="text-2xl font-bold text-amber-400 mt-1">0</h3>
                         </div>
                         <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
@@ -514,23 +514,18 @@
                     <div>
                         <label class="block text-xs font-medium text-slate-300 mb-1">航班狀態</label>
                         <select id="flightStatus" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-sm focus:outline-none focus:border-indigo-500">
-                            <option value="🟢 準備中">🟢 準備中</option>
-                            <option value="🛫 登機中">🛫 登機中</option>
-                            <option value="⏳ 等待起飛">⏳ 等待起飛</option>
-                            <option value="✈️ 飛行中">✈️ 飛行中</option>
-                            <option value="🛬 準備降落">🛬 準備降落</option>
-                            <option value="✅ 已完成">✅ 已完成</option>
-                            <option value="🟡 延誤">🟡 延誤</option>
-                            <option value="🔴 取消">🔴 取消</option>
-                            <option value="⚫ 航班終止">⚫ 航班終止</option>
+                            <option value="準備中">準備中</option>
+                            <option value="登機">登機</option>
+                            <option value="飛行中">飛行中</option>
+                            <option value="已完成">已完成</option>
+                            <option value="延誤">延誤</option>
+                            <option value="取消">取消</option>
                         </select>
                     </div>
                 </div>
                 <div>
-                    <label class="block text-xs font-medium text-slate-300 mb-1">指派駕駛員</label>
-                    <select id="flightPilot" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-sm focus:outline-none focus:border-indigo-500">
-                        <option value="未指派">未指派</option>
-                    </select>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">指派駕駛員 (填寫駕駛員名稱)</label>
+                    <input type="text" id="flightPilot" placeholder="例如：張機長 / 王駕駛" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-sm focus:outline-none focus:border-indigo-500">
                 </div>
                 <div class="flex items-center gap-2 pt-2">
                     <input type="checkbox" id="flightPushDiscord" checked class="w-4 h-4 rounded bg-slate-900 border-slate-700 text-indigo-600 focus:ring-indigo-500">
@@ -553,15 +548,21 @@
                     <label class="block text-xs font-medium text-slate-300 mb-1">公告標題 *</label>
                     <input type="text" id="announceTitle" required placeholder="請輸入公告標題..." class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-sm focus:outline-none focus:border-amber-500">
                 </div>
-                <div>
-                    <label class="block text-xs font-medium text-slate-300 mb-1">發布頻道與推播類別 *</label>
-                    <select id="announceChannel" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-sm focus:outline-none focus:border-amber-500">
-                        <option value="flight">✈️ 航班資訊</option>
-                        <option value="event">🎉 活動公告</option>
-                        <option value="important">🚨 重要公告</option>
-                        <option value="progress">🔧 製作進度</option>
-                        <option value="admin">🛠️ 管理公告</option>
-                    </select>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">發布頻道類別 *</label>
+                        <select id="announceChannel" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-sm focus:outline-none focus:border-amber-500">
+                            <option value="flight">✈️ 航班資訊</option>
+                            <option value="event">🎉 活動公告</option>
+                            <option value="important">🚨 重要公告</option>
+                            <option value="progress">🔧 製作進度</option>
+                            <option value="admin">🛠️ 管理公告</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">公告發布人 *</label>
+                        <input type="text" id="announceAuthor" required placeholder="例如：航務處 / 管理員" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-sm focus:outline-none focus:border-amber-500">
+                    </div>
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-slate-300 mb-1">公告內容 *</label>
@@ -634,18 +635,6 @@
             progress: "🔧 製作進度",
             admin: "🛠️ 管理公告"
         };
-
-        const FLIGHT_STATUS_LIST = [
-            '🟢 準備中',
-            '🛫 登機中',
-            '⏳ 等待起飛',
-            '✈️ 飛行中',
-            '🛬 準備降落',
-            '✅ 已完成',
-            '🟡 延誤',
-            '🔴 取消',
-            '⚫ 航班終止'
-        ];
 
         // 2. 系統狀態數據
         let currentUser = null;
@@ -787,7 +776,7 @@
 
         function renderDashboard() {
             document.getElementById('dashTotalFlights').innerText = flights.length;
-            document.getElementById('dashActiveFlights').innerText = flights.filter(f => ['🟢 準備中', '🛫 登機中', '⏳ 等待起飛', '✈️ 飛行中', '🛬 準備降落'].includes(f.status)).length;
+            document.getElementById('dashActiveFlights').innerText = flights.filter(f => ['準備中', '登機', '飛行中'].includes(f.status)).length;
             document.getElementById('dashTotalPilots').innerText = pilots.length;
             document.getElementById('dashTotalAnnouncements').innerText = announcements.length;
 
@@ -842,7 +831,7 @@
                     <td class="p-4 font-mono text-indigo-300">${f.dep} <i class="fa-solid fa-arrow-right text-xs text-slate-500 mx-1"></i> ${f.arr}</td>
                     <td class="p-4 text-xs text-slate-300">${f.time ? new Date(f.time).toLocaleString() : '即時起飛'}</td>
                     <td class="p-4 text-xs text-slate-400">${f.aircraft || '-'}</td>
-                    <td class="p-4 text-xs text-slate-300 font-medium">${f.pilot || '未指派'}</td>
+                    <td class="p-4 text-xs text-slate-300 font-medium">${escapeHtml(f.pilot) || '未指派'}</td>
                     <td class="p-4"><span class="text-xs px-2.5 py-1 rounded-full font-medium ${getStatusBadgeClass(f.status)}">${f.status}</span></td>
                     <td class="p-4 text-right space-x-1">
                         <button onclick="quickUpdateFlight('${f.id}')" class="px-2.5 py-1 bg-indigo-600/30 hover:bg-indigo-600/50 text-xs text-indigo-300 rounded-lg border border-indigo-500/30 transition flex-inline items-center gap-1" title="發布/推播航班狀態">
@@ -952,9 +941,6 @@
         }
 
         function openFlightModal(id = null) {
-            const pilotSelect = document.getElementById('flightPilot');
-            pilotSelect.innerHTML = '<option value="未指派">未指派</option>' + pilots.map(p => `<option value="${escapeHtml(p.name)}">${escapeHtml(p.name)} (${p.role})</option>`).join('');
-
             if (id) {
                 const f = flights.find(x => x.id === id);
                 if (f) {
@@ -966,7 +952,7 @@
                     document.getElementById('flightAircraft').value = f.aircraft || '';
                     document.getElementById('flightTime').value = f.time || '';
                     document.getElementById('flightStatus').value = f.status;
-                    document.getElementById('flightPilot').value = f.pilot || '未指派';
+                    document.getElementById('flightPilot').value = f.pilot || '';
                 }
             } else {
                 document.getElementById('flightModalTitle').innerText = '新增航班';
@@ -976,7 +962,8 @@
                 document.getElementById('flightArr').value = '';
                 document.getElementById('flightAircraft').value = '';
                 document.getElementById('flightTime').value = '';
-                document.getElementById('flightStatus').value = '🟢 準備中';
+                document.getElementById('flightStatus').value = '準備中';
+                document.getElementById('flightPilot').value = currentUser ? currentUser.name : '';
             }
             document.getElementById('flightModal').classList.remove('hidden');
         }
@@ -990,7 +977,7 @@
             const aircraft = document.getElementById('flightAircraft').value.trim();
             const time = document.getElementById('flightTime').value;
             const status = document.getElementById('flightStatus').value;
-            const pilot = document.getElementById('flightPilot').value;
+            const pilot = document.getElementById('flightPilot').value.trim() || '未指派';
             const pushDiscord = document.getElementById('flightPushDiscord').checked;
 
             if (id) {
@@ -1005,7 +992,7 @@
                     code, dep, arr, aircraft, time, status, pilot
                 };
                 flights.unshift(newFlight);
-                addLog(`新增航班 ${code} (${dep} -> ${arr})`);
+                addLog(`新增航班 ${code} (${dep} -> ${arr}) - 駕駛: ${pilot}`);
             }
 
             saveData('flights', flights);
@@ -1023,22 +1010,14 @@
             const f = flights.find(x => x.id === id);
             if (!f) return;
 
-            const promptText = `請選擇 ${f.code} 的最新航班狀態數字：\n` + 
-                FLIGHT_STATUS_LIST.map((st, i) => `${i + 1}. ${st}`).join('\n');
-
-            const choice = prompt(promptText, FLIGHT_STATUS_LIST.indexOf(f.status) + 1 || "1");
-            const index = parseInt(choice) - 1;
-
-            if (!isNaN(index) && index >= 0 && index < FLIGHT_STATUS_LIST.length) {
-                const newStatus = FLIGHT_STATUS_LIST[index];
+            const newStatus = prompt(`請輸入 ${f.code} 的最新航班狀態 (準備中 / 登機 / 飛行中 / 已完成 / 延誤 / 取消):`, f.status);
+            if (newStatus && newStatus !== f.status) {
                 f.status = newStatus;
                 saveData('flights', flights);
                 addLog(`駕駛員/管理員 ${currentUser.name} 將航班 ${f.code} 狀態更改為: ${newStatus}`);
                 renderAll();
 
                 pushFlightToDiscord(f.code, f.dep, f.arr, f.status, f.pilot, f.time);
-            } else if (choice !== null) {
-                showToast('請輸入有效的數字編號', 'error');
             }
         }
 
@@ -1056,6 +1035,7 @@
         function openAnnouncementModal() {
             document.getElementById('announceTitle').value = '';
             document.getElementById('announceContent').value = '';
+            document.getElementById('announceAuthor').value = currentUser ? currentUser.name : '';
             document.getElementById('announcementModal').classList.remove('hidden');
         }
 
@@ -1063,19 +1043,20 @@
             e.preventDefault();
             const title = document.getElementById('announceTitle').value.trim();
             const channel = document.getElementById('announceChannel').value;
+            const author = document.getElementById('announceAuthor').value.trim() || currentUser.name;
             const content = document.getElementById('announceContent').value.trim();
             const pushDiscord = document.getElementById('announcePushDiscord').checked;
 
             const newAnnounce = {
                 id: Date.now().toString(),
                 title, channel, content,
-                author: currentUser.name,
+                author: author,
                 timestamp: new Date().toISOString()
             };
 
             announcements.unshift(newAnnounce);
             saveData('announcements', announcements);
-            addLog(`發布公告 [${CHANNEL_NAMES[channel]}]: ${title}`);
+            addLog(`發布公告 [${CHANNEL_NAMES[channel]}] (發布人: ${author}): ${title}`);
 
             if (pushDiscord) {
                 sendDiscordWebhook(channel, {
@@ -1083,7 +1064,7 @@
                     description: content,
                     color: 0xDAA520,
                     fields: [
-                        { name: "發布者", value: currentUser.name, inline: true },
+                        { name: "發布者", value: author, inline: true },
                         { name: "時間", value: new Date().toLocaleString(), inline: true }
                     ]
                 });
@@ -1170,7 +1151,7 @@
             sendDiscordWebhook('flight', {
                 title: `✈️ 中華虛擬航空 航班動態通知 [${code}]`,
                 description: `航班 **${code}** 最新狀態為：**${status}**`,
-                color: status.includes('延誤') || status.includes('取消') || status.includes('終止') ? 0xCC0000 : (status.includes('飛行') ? 0x003366 : 0x00FF00),
+                color: status === '延誤' ? 0xCC0000 : (status === '飛行中' ? 0x003366 : 0x00FF00),
                 fields: [
                     { name: "航線", value: `${dep} ✈️ ${arr}`, inline: true },
                     { name: "狀態", value: status, inline: true },
@@ -1180,7 +1161,7 @@
             });
         }
 
-        // 廣義 Discord Webhook 發送機制
+        // Discord Webhook 發送機制
         function sendDiscordWebhook(channelKey, embedData) {
             const webhookUrl = WEBHOOKS[channelKey] || (channels.find(c => c.id === channelKey) || {}).webhook;
             if (!webhookUrl) {
@@ -1214,7 +1195,6 @@
             });
         }
 
-        // 純文字 / 相容性 Fallback 機制
         function sendDiscordTextFallback(webhookUrl, embedData, channelKey) {
             const simpleText = `**[${embedData.title || 'CVA 通知'}]**\n${embedData.description || ''}`;
             
@@ -1280,16 +1260,15 @@
         }
 
         function getStatusBadgeClass(status) {
-            if (status.includes('準備中')) return 'bg-slate-700 text-slate-300 border border-slate-600';
-            if (status.includes('登機中')) return 'bg-blue-500/20 text-blue-400 border border-blue-500/30';
-            if (status.includes('等待起飛')) return 'bg-sky-500/20 text-sky-400 border border-sky-500/30';
-            if (status.includes('飛行中')) return 'bg-amber-500/20 text-amber-400 border border-amber-500/30';
-            if (status.includes('準備降落')) return 'bg-purple-500/20 text-purple-400 border border-purple-500/30';
-            if (status.includes('已完成')) return 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
-            if (status.includes('延誤')) return 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30';
-            if (status.includes('取消')) return 'bg-rose-500/20 text-rose-400 border border-rose-500/30';
-            if (status.includes('航班終止')) return 'bg-slate-800 text-slate-500 border border-slate-700';
-            return 'bg-slate-700 text-slate-300';
+            switch(status) {
+                case '準備中': return 'bg-slate-700 text-slate-300 border border-slate-600';
+                case '登機': return 'bg-blue-500/20 text-blue-400 border border-blue-500/30';
+                case '飛行中': return 'bg-amber-500/20 text-amber-400 border border-amber-500/30';
+                case '已完成': return 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
+                case '延誤': return 'bg-rose-500/20 text-rose-400 border border-rose-500/30';
+                case '取消': return 'bg-slate-800 text-slate-500 line-through border border-slate-700';
+                default: return 'bg-slate-700 text-slate-300';
+            }
         }
 
         function escapeHtml(str) {

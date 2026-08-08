@@ -652,7 +652,7 @@
 
     <!-- JavaScript 全域邏輯與狀態管理 -->
     <script>
-        // 完整的航班狀態分類選單
+        // 完整的航班狀態分類選單 (已修復「🚪 登機門開放」圖示)
         const FLIGHT_STATUS_OPTIONS = [
             {
                 group: "✈️ 航班狀態",
@@ -666,7 +666,7 @@
                     "🧳 行李裝載中",
                     "🍱 餐飲補給中",
                     "🔍 航機檢查中",
-                    "門 登機門開放",
+                    "🚪 登機門開放",
                     "📣 開始登機",
                     "🧍 登機中",
                     "🎫 登機確認",
@@ -1123,7 +1123,6 @@
             showToast('航班儲存成功！', 'success');
         }
 
-        // 打開快速狀態發布 Modal
         function quickUpdateFlightModal(id) {
             const f = flights.find(x => x.id === id);
             if (!f) return;
@@ -1134,7 +1133,6 @@
             document.getElementById('quickStatusModal').classList.remove('hidden');
         }
 
-        // 提交快速狀態更新
         function handleQuickStatusSubmit(e) {
             e.preventDefault();
             const id = document.getElementById('quickStatusFlightId').value;
@@ -1277,17 +1275,15 @@
             showToast('頻道建立成功！', 'success');
         }
 
-        // 根據狀態回傳對應 Discord Embed 顏色碼
         function getDiscordEmbedColor(status) {
-            if (status.includes('延誤') || status.includes('改期')) return 0xDAA520; // 琥珀/黃色
-            if (status.includes('取消') || status.includes('終止') || status.includes('刪除') || status.includes('暫停')) return 0xCC0000; // 紅色
-            if (status.includes('緊急') || status.includes('異常')) return 0xFF0055; // 亮紫紅
-            if (status.includes('飛行') || status.includes('巡航') || status.includes('起飛')) return 0x003366; // CVA深藍
-            if (status.includes('完成') || status.includes('接地') || status.includes('停妥')) return 0x00FF7F; // 綠色
+            if (status.includes('延誤') || status.includes('改期')) return 0xDAA520;
+            if (status.includes('取消') || status.includes('終止') || status.includes('刪除') || status.includes('暫停')) return 0xCC0000;
+            if (status.includes('緊急') || status.includes('異常')) return 0xFF0055;
+            if (status.includes('飛行') || status.includes('巡航') || status.includes('起飛')) return 0x003366;
+            if (status.includes('完成') || status.includes('接地') || status.includes('停妥')) return 0x00FF7F;
             return 0x4A5568;
         }
 
-        // 航班 Discord 推播格式化
         function pushFlightToDiscord(code, dep, arr, status, pilot, time) {
             sendDiscordWebhook('flight', {
                 title: `✈️ 中華虛擬航空 航班動態通知 [${code}]`,
@@ -1302,7 +1298,6 @@
             });
         }
 
-        // Discord Webhook 發送機制
         function sendDiscordWebhook(channelKey, embedData) {
             const webhookUrl = WEBHOOKS[channelKey] || (channels.find(c => c.id === channelKey) || {}).webhook;
             if (!webhookUrl) {
